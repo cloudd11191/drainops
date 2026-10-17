@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#102b2b">
+  <title>Staff sign in · DrainOps AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{color-scheme:dark;--bg:#090c11;--card:#111620;--line:#28303c;--ink:#efe8d8;--mut:#9a9486;--gold:#d8b062;--amber:#f2c77b}
+    *{box-sizing:border-box}
+    body{min-height:100vh;margin:0;background:radial-gradient(ellipse at 76% 16%,#41331f 0,transparent 38%),linear-gradient(140deg,#090c11,#111a27 62%,#080b10);color:var(--ink);font:16px/1.55 "Segoe UI",Inter,system-ui,sans-serif;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr)}
+    a{color:inherit}
+    .story{position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(28px,6vw,76px);overflow:hidden}
+    .brand{font:700 1.5rem Georgia,serif;letter-spacing:.04em;text-decoration:none}.brand i{color:var(--gold);font-style:normal}
+    .story-copy{position:relative;z-index:1;max-width:680px;margin:10vh 0}
+    .eyebrow{color:var(--gold);font-size:.72rem;letter-spacing:.24em;text-transform:uppercase}
+    h1{font:700 clamp(3rem,6vw,5.6rem)/.98 Georgia,"Times New Roman",serif;margin:.25em 0 .4em;max-width:650px}
+    h1 em{color:var(--gold);font-weight:500}
+    .story-copy p{max-width:500px;color:#c0b9aa;font-size:1.08rem}
+    .proof{display:flex;gap:14px;flex-wrap:wrap}.proof span{padding:10px 14px;border:1px solid #d8b06244;background:#11162088;border-radius:999px;color:#d7c9a8;font-size:.8rem}
+    .story-foot{color:#858171;font-size:.8rem}
+    .form-side{display:grid;place-items:center;padding:28px}
+    .login-card{width:min(100%,460px);padding:clamp(26px,4vw,42px);background:#111620eF;border:1px solid var(--line);border-radius:24px;box-shadow:0 30px 90px #0008}
+    .login-card h2{font:700 2.3rem/1.1 Georgia,serif;margin:10px 0}.muted{color:var(--mut)}
+    form{margin-top:28px}.field{display:flex;flex-direction:column;gap:8px;margin:18px 0}.field label{font-size:.76rem;color:#c9c1b0;letter-spacing:.08em;text-transform:uppercase}
+    .field input{width:100%;padding:13px 14px;border-radius:11px;border:1px solid #343d49;background:#090e16;color:var(--ink);font:inherit}
+    .field input:focus{outline:2px solid #d8b06288;border-color:var(--gold)}
+    .submit{width:100%;padding:14px;border:0;border-radius:11px;background:linear-gradient(100deg,#f0cf86,#c58b3a);color:#17130d;font:inherit;font-weight:700;cursor:not-allowed;opacity:.65}
+    .notice{margin-top:18px;padding:14px 15px;border:1px solid #d5a54566;background:#4a361522;color:var(--amber);border-radius:12px;font-size:.88rem}
+    .notice strong{display:block;margin-bottom:4px}
+    .demo-link{display:inline-block;margin-top:20px;color:#f0dca5;text-decoration:none;border-bottom:1px solid #d8b06288;padding-bottom:2px}
+    .privacy{margin-top:16px;color:#858171;font-size:.76rem}
+    body{font-family:"DM Sans","Segoe UI",Inter,system-ui,sans-serif}
+    .story{background:linear-gradient(90deg,rgba(8,28,29,.62),rgba(8,28,29,.28)),linear-gradient(0deg,rgba(8,28,29,.42),transparent 70%),url("https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=1800&q=85") center/cover}
+    .brand,.login-card h2,h1{font-family:Manrope,"Segoe UI",sans-serif;letter-spacing:-.045em}
+    .story-copy p{color:#d4e3de}
+    .proof span{border-color:#a5ead455;background:#102b2b88}
+    .form-side{background:linear-gradient(rgba(8,23,25,.55),rgba(8,23,25,.68)),url("https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1400&q=85") center/cover}
+    .story-foot{color:#d4e3de}
+    .privacy{color:#aebeb8}
+    .login-card{background:rgba(15,24,31,.94);backdrop-filter:blur(14px);border-color:#a5ead433}
+    .demo-link{color:#a5ead4;border-color:#a5ead488}
+    @media(max-width:850px){body{grid-template-columns:1fr}.story{min-height:auto;padding-bottom:0}.story-copy{margin:9vh 0 5vh}.story-foot{display:none}.form-side{align-items:start;padding:24px 20px 48px}}
+    @media(max-width:460px){.proof span{font-size:.72rem}.login-card{padding:24px 20px}}
+  </style>
+</head>
+<body>
+  <main class="story">
+    <a class="brand" href="index.html">Drain<i>Ops</i> AI</a>
+    <div class="story-copy">
+      <div class="eyebrow">Operations access · Eastern India</div>
+      <h1>Protect the city, <em>one drain at a time.</em></h1>
+      <p>Field inspections, flood-risk forecasting, and verified maintenance workflows for the teams keeping neighborhoods moving.</p>
+      <div class="proof"><span>Offline-ready field work</span><span>Risk before rain</span><span>Evidence-led response</span></div>
+    </div>
+    <div class="story-foot">DrainOps AI · Panihati · Kamarhati · Barrackpore and beyond</div>
+  </main>
+  <section class="form-side" aria-labelledby="sign-in-title">
+    <div class="login-card">
+      <div class="eyebrow">Staff portal</div>
+      <h2 id="sign-in-title">Sign in</h2>
+      <p class="muted">Use your municipal or field-team account.</p>
+      <form id="login-form">
+        <div class="field">
+          <label for="email">Work email</label>
+          <input id="email" name="email" type="email" autocomplete="username" placeholder="name@municipality.gov.in" required>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+        </div>
+        <button class="submit" type="submit" disabled>Sign in unavailable</button>
+      </form>
+      <div class="notice" role="status">
+        <strong>Authentication is not set up yet.</strong>
+        This pilot has no login API or user accounts. No password will be sent or saved. Ask your administrator to configure backend authentication before using this portal for protected data.
+      </div>
+      <a class="demo-link" href="index.html#public-layer">Continue to the public demo →</a>
+      <p class="privacy">Do not enter a real password here. This page is a visual prototype, not a secure sign-in.</p>
+    </div>
+  </section>
+  <script>
+    document.getElementById('login-form').addEventListener('submit', event => {
+      event.preventDefault();
+      document.getElementById('password').value = '';
+    });
+  </script>
+</body>
+</html>

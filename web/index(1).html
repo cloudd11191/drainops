@@ -1,1 +1,959 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="DrainOps AI helps public agencies identify drainage risks, prioritize maintenance, and prepare communities for urban waterlogging.">
+<meta name="theme-color" content="#102b2b">
+<title>DrainOps AI — Forecast the flood. Clear the drain first.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<style>
+:root{--bg:#f4efe4;--bg-2:#f7f1df;--surface:rgba(255,255,255,.62);--surface-strong:#fffcf5;--ink:#1c1a16;--mut:#6b6558;--card:#fffcf5;--card-soft:#fdf6e8;--line:#e2d7bf;--gold:#a97a2c;--gold-soft:#f0d38f;--teal:#14313f;--shadow:0 24px 60px rgba(27,28,34,.14);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#090c11;--bg-2:#0d1320;--surface:rgba(12,18,27,.62);--surface-strong:#111620;--ink:#efe8d8;--mut:#9a9486;--card:#111620;--card-soft:#131d2a;--line:#232b38;--gold:#d8b062;--gold-soft:#f1d089;--teal:#0d1d29;--shadow:0 24px 60px rgba(0,0,0,.38)}}
+:root[data-theme="dark"]{--bg:#090c11;--bg-2:#0d1320;--surface:rgba(12,18,27,.62);--surface-strong:#111620;--ink:#efe8d8;--mut:#9a9486;--card:#111620;--card-soft:#131d2a;--line:#232b38;--gold:#d8b062;--gold-soft:#f1d089;--teal:#0d1d29;--shadow:0 24px 60px rgba(0,0,0,.38)}
+html{scroll-behavior:smooth;scroll-padding-top:70px}*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(1000px 500px at 10% 0%, rgba(150,116,49,.15), transparent 50%),radial-gradient(900px 420px at 90% 0%, rgba(72,122,148,.12), transparent 45%),linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%);color:var(--ink);font:400 16px/1.6 "Manrope","Segoe UI",Inter,system-ui,sans-serif}
+::selection{background:rgba(196,146,58,.28);color:var(--ink)}
+a,button,input,select,textarea{font:inherit}
+img{max-width:100%;display:block}
+.serif{font-family:"Cormorant Garamond","Georgia","Times New Roman",serif}
+nav{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top,0px)) 5vw 14px;background:rgba(6,10,16,.4);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid rgba(230,193,122,.2);color:#efe8d8}
+nav b{font:700 1.55rem 'Cormorant Garamond',serif;letter-spacing:.04em}nav b i{color:#e6c17a;font-style:normal}
+nav a{position:relative;color:#efe8d8;text-decoration:none;margin-left:22px;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;opacity:.86;transition:opacity .2s ease,color .2s ease}
+nav a::after{content:"";position:absolute;left:0;bottom:-7px;width:100%;height:1px;background:linear-gradient(90deg,rgba(240,207,134,0),rgba(240,207,134,.9),rgba(240,207,134,0));transform:scaleX(0);transform-origin:center;transition:transform .2s ease}
+nav a:hover,nav a:focus-visible{opacity:1;color:#f8e6b5}
+nav a:hover::after,nav a:focus-visible::after{transform:scaleX(1)}
+.hero{position:relative;isolation:isolate;min-height:96vh;overflow:hidden;color:#efe8d8;display:flex;align-items:center;background:radial-gradient(60% 45% at 72% 74%,#e0a24a55,#0000 70%),linear-gradient(120deg,#050810,#0d1626 35%,#2a2030 78%,#6b4a3a)}
+.hero::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,10,16,.38),rgba(6,10,16,.08) 40%,rgba(8,13,17,.35)),linear-gradient(180deg,transparent 0%,rgba(5,8,13,.22) 100%);pointer-events:none;z-index:0}
+.moon{position:absolute;right:14%;top:16%;width:clamp(90px,14vw,190px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff4d6,#e6c17a 60%,#b98a3e);box-shadow:0 0 120px 40px rgba(230,193,122,.3)}
+.hero svg,.hero canvas{position:absolute;left:0;bottom:0;width:100%}
+.hero canvas{top:0;height:100%}.hero svg{height:42%}
+.hc{position:relative;z-index:3;padding:130px 6vw 90px;max-width:1100px}
+.eyebrow{letter-spacing:.35em;text-transform:uppercase;font-size:.75rem;color:#e6c17a}
+.hero-actions{display:flex;flex-wrap:wrap;gap:14px;margin-top:30px}
+h1{font:700 clamp(2.8rem,8vw,6.4rem)/.98 'Cormorant Garamond',serif;margin:.25em 0;text-shadow:0 8px 26px rgba(0,0,0,.14)}
+h1 em{font-style:italic;background:linear-gradient(100deg,#f3d58f,#c58b3a);-webkit-background-clip:text;background-clip:text;color:transparent}
+#q{font:italic 500 clamp(1.2rem,2.6vw,1.9rem)/1.35 'Cormorant Garamond',serif;min-height:3.4em;max-width:640px;transition:opacity .6s;color:#f3e7cc}
+.btn{display:inline-block;padding:14px 28px;border-radius:99px;font-weight:600;text-decoration:none;letter-spacing:.04em;border:1px solid rgba(230,193,122,.9);cursor:pointer;font-family:inherit;font-size:.95rem;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease;box-shadow:0 10px 28px rgba(0,0,0,.14)}
+.btn:hover,.btn:focus-visible{transform:translateY(-2px);box-shadow:0 18px 30px rgba(255,177,89,.18)}
+.b1{background:linear-gradient(100deg,#f0cf86,#c58b3a);color:#1b1306;border:0}.b2{color:#e6c17a;background:rgba(0,0,0,.18)}
+.hero-rail{display:grid;grid-template-columns:repeat(3,minmax(120px,1fr));gap:16px;max-width:520px;margin-top:34px}.hero-pill{padding:16px 18px;border:1px solid rgba(230,193,122,.28);background:rgba(10,16,25,.28);border-radius:18px;backdrop-filter:blur(10px)}
+.hero-pill strong{display:block;font:700 1.5rem/1.1 'Cormorant Garamond',serif;color:#f7d89e}.hero-pill span{display:block;margin-top:6px;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(242,233,213,.78)}
+.stats{display:flex;gap:clamp(18px,4vw,56px);flex-wrap:wrap;margin-top:48px}.stats div{border-left:1px solid rgba(230,193,122,.45);padding-left:16px;background:linear-gradient(90deg,rgba(240,207,134,.08),transparent)}
+.stats b{font:700 2.6rem 'Cormorant Garamond',serif;color:#f3d58f;display:block;line-height:1}.stats span{font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+.hero-trust{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;max-width:760px;margin-top:28px}.hero-trust .trust-item{padding:12px 14px;border:1px solid rgba(240,205,128,.3);border-radius:16px;background:rgba(8,14,20,.28);backdrop-filter:blur(8px);display:flex;align-items:center;gap:10px}.hero-trust .trust-item::before{content:"◆";color:#f0d38f;font-size:.75rem}.hero-trust strong{display:block;font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#f5dfb0}.hero-trust span{color:rgba(238,237,232,.8);font-size:.9rem}
+.tick{overflow:hidden;background:linear-gradient(180deg,#0a0f18,#0d1724);color:#e6c17a;border-block:1px solid rgba(230,193,122,.28);padding:14px 0;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+.tick div{display:flex;width:max-content;animation:mq 50s linear infinite;font:italic 500 1.35rem 'Cormorant Garamond',serif}.tick span{padding:0 34px;white-space:nowrap}.tick span:before{content:"◆";margin-right:34px;font-size:.6rem;vertical-align:middle}
+@keyframes mq{to{transform:translateX(-50%)} }
+section.s{padding:96px 6vw;max-width:1280px;margin:auto}
+h2{font:700 clamp(2rem,5vw,3.6rem)/1.05 'Cormorant Garamond',serif;margin:.2em 0 .3em}.sub{color:var(--mut);max-width:620px}
+.feature-grid,.impact-grid,.video-grid,.public-grid{display:grid;gap:22px}
+.feature-grid{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:22px}
+.feature-card,.impact-card,.video-card,.public-card,.inspector-card,.queue-card{background:linear-gradient(180deg,rgba(255,255,255,.7),rgba(255,255,255,.32));border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
+.feature-card{padding:22px;border-radius:20px;background:linear-gradient(180deg,var(--card-soft),rgba(255,255,255,.2));}
+.feature-card:hover,.impact-card:hover,.video-card:hover,.public-card:hover,.inspector-card:hover,.queue-card:hover{transform:translateY(-4px);box-shadow:0 28px 60px rgba(34,32,29,.12);border-color:rgba(230,193,122,.4)}
+.feature-card h3{margin:.4em 0 .4em;font-size:1.5rem;line-height:1.2}
+.feature-card p{margin:0;color:var(--mut)}
+.impact-inner,.media-inner{max-width:1280px;margin:0 auto}
+.impact-grid{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:24px}
+.impact-card{overflow:hidden}
+.impact-card img{height:280px;width:100%;object-fit:cover}
+.impact-copy{padding:24px 22px 22px}.impact-label{display:inline-block;background:rgba(230,193,122,.12);color:var(--gold);padding:5px 10px;border-radius:999px;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;border:1px solid rgba(230,193,122,.22)}
+.impact-copy h3{margin:.8rem 0 .6rem;font-size:1.9rem;line-height:1.15}.impact-copy p{margin:0;color:var(--mut)}
+.media-note{margin-top:16px;color:var(--mut);font-size:.88rem}
+.video-grid{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:24px}
+.video-card{position:relative;overflow:hidden;min-height:320px;background:#0d1722}
+.video-card img{width:100%;height:100%;object-fit:cover;filter:saturate(.9) contrast(1.05);opacity:.88}
+.video-card .play-button{position:absolute;inset:auto auto 26px 24px;width:56px;height:56px;border:0;border-radius:50%;background:linear-gradient(135deg,#f8d989,#d08d32);box-shadow:0 12px 28px rgba(205,144,56,.38);cursor:pointer;display:grid;place-items:center}
+.video-card .play-button::before{content:"";display:block;width:0;height:0;border-style:solid;border-width:9px 0 9px 16px;border-color:transparent transparent transparent #1b1306;margin-left:4px}
+.video-copy{position:absolute;left:0;right:0;bottom:0;padding:18px 18px 22px;background:linear-gradient(180deg,transparent,rgba(8,10,14,.82) 40%,rgba(8,10,14,.94));color:#eef6ff}
+.video-copy small{display:block;color:rgba(240,230,200,.78);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.video-copy strong{display:block;font-size:1.15rem;line-height:1.28}
+.video-card iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.inspector-app{display:grid;grid-template-columns:1.3fr .7fr;gap:22px;margin-top:30px}.inspector-card,.queue-card,.public-card{background:linear-gradient(180deg,rgba(255,255,255,.8),rgba(255,255,255,.38));border:1px solid var(--line);border-radius:22px;padding:22px}.inspector-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}.lang-switch{display:inline-flex;gap:8px;padding:6px;border-radius:999px;background:#101923;border:1px solid rgba(230,193,122,.28)}.lang-switch button{background:transparent;border:0;color:#ddd;border-radius:999px;padding:7px 12px;cursor:pointer}.lang-switch button.active{background:linear-gradient(100deg,#f0cf86,#c58b3a);color:#17130d;font-weight:700}.field-grid{display:grid;grid-template-columns:repeat(2,minmax(160px,1fr));gap:16px}.field{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}.field.full{grid-column:1 / -1}.field label{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}.field input,.field select,.field textarea{width:100%;background:rgba(12,17,24,.74);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font:inherit;transition:border-color .2s ease, box-shadow .2s ease, transform .2s ease}.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:rgba(230,193,122,.8);box-shadow:0 0 0 3px rgba(230,193,122,.12)}.field textarea{min-height:94px;resize:vertical}.photo-pair{display:grid;grid-template-columns:repeat(2,minmax(140px,1fr));gap:14px;margin:10px 0 18px}.photo-box{min-height:160px;border:1px dashed rgba(230,193,122,.5);background:rgba(8,13,18,.5);border-radius:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;position:relative;transition:transform .2s ease,border-color .2s ease}.photo-box:hover{transform:translateY(-2px);border-color:rgba(230,193,122,.9)}.photo-box img{max-width:100%;max-height:100%;object-fit:cover;display:block}.photo-box input{display:none}.quality-pill{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;border:1px solid rgba(230,193,122,.5);font-size:.76rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);background:rgba(15,22,31,.6)}.quality-good{color:#7fe7af;border-color:rgba(127,231,175,.6)}.quality-bad{color:#ff9d7f;border-color:rgba(255,157,127,.6)}.queue-card ul,.ward-score-list,.alert-list{list-style:none;padding:0;margin:0}.queue-card li,.ward-score-list li,.alert-list li{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}.queue-card li:last-child,.ward-score-list li:last-child,.alert-list li:last-child{border-bottom:0}.queue-meta{display:flex;flex-direction:column}.small-tag{display:inline-block;padding:4px 8px;border-radius:999px;background:rgba(230,193,122,.1);color:var(--gold);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase}.sync-btn,.primary-btn{padding:12px 18px;border:0;border-radius:12px;background:linear-gradient(100deg,#f0cf86,#c58b3a);color:#17130d;font-weight:700;cursor:pointer;transition:transform .2s ease,box-shadow .2s ease;box-shadow:0 12px 28px rgba(192,138,53,.18)}.sync-btn:hover,.primary-btn:hover{transform:translateY(-1px)}.sync-btn.secondary{background:transparent;color:#e0c484;border:1px solid rgba(230,193,122,.5);box-shadow:none}.score-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(12,17,24,.72);border:1px solid var(--line);border-radius:14px;margin-top:10px}.score-row strong{font-size:1.5rem}.score-row span{color:var(--mut)}.progress{height:8px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden;margin-top:10px}.progress > i{display:block;height:100%;width:38%;background:linear-gradient(90deg,#efc56c,#d77f38)}.public-grid{display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:20px;margin-top:22px}.public-card h3{margin:0 0 18px;font-size:1.4rem}.public-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.report-form{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:14px}.report-form .field{margin-bottom:0}.report-form .field.full{grid-column:1 / -1}.report-status{margin-top:12px;color:#bfe6cb;font-size:.85rem;min-height:1.2em}.report-preview{display:flex;align-items:center;gap:10px;margin-top:8px;color:var(--mut);font-size:.9rem}
+nav{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top,0px)) 5vw 14px;background:linear-gradient(#070a10cc,#070a1000);color:#efe8d8}
+nav b{font:700 1.5rem 'Cormorant Garamond',serif;letter-spacing:.04em}nav b i{color:#e6c17a;font-style:normal}
+nav a{color:#efe8d8;text-decoration:none;margin-left:22px;font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+.hero{position:relative;isolation:isolate;min-height:96vh;overflow:hidden;color:#efe8d8;display:flex;align-items:center;background:radial-gradient(60% 45% at 72% 74%,#e0a24a55,#0000 70%),linear-gradient(#050810,#0d1626 55%,#2a2030 85%,#6b4a3a)}
+.moon{position:absolute;right:14%;top:16%;width:clamp(90px,14vw,190px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff4d6,#e6c17a 60%,#b98a3e);box-shadow:0 0 120px 40px #e6c17a40}
+.hero svg,.hero canvas{position:absolute;left:0;bottom:0;width:100%}
+.hero canvas{top:0;height:100%}.hero svg{height:42%}
+.hc{position:relative;z-index:3;padding:130px 6vw 90px;max-width:1100px}
+.eyebrow{letter-spacing:.35em;text-transform:uppercase;font-size:.75rem;color:#e6c17a}
+h1{font:700 clamp(2.8rem,8vw,6.4rem)/.98 'Cormorant Garamond',serif;margin:.25em 0}
+h1 em{font-style:italic;background:linear-gradient(100deg,#f3d58f,#c58b3a);-webkit-background-clip:text;background-clip:text;color:transparent}
+#q{font:italic 500 clamp(1.2rem,2.6vw,1.9rem)/1.35 'Cormorant Garamond',serif;min-height:3.4em;max-width:640px;transition:opacity .6s;color:#f3e7cc}
+.btn{display:inline-block;padding:14px 28px;border-radius:99px;font-weight:600;text-decoration:none;letter-spacing:.04em;border:1px solid #e6c17a;cursor:pointer;font-family:inherit;font-size:.95rem}
+.b1{background:linear-gradient(100deg,#f0cf86,#c58b3a);color:#1b1306;border:0}.b2{color:#e6c17a;background:#0003;margin-left:10px}
+.stats{display:flex;gap:clamp(18px,4vw,56px);flex-wrap:wrap;margin-top:48px}.stats div{border-left:1px solid #e6c17a80;padding-left:16px}
+.stats b{font:700 2.6rem 'Cormorant Garamond',serif;color:#f3d58f;display:block;line-height:1}.stats span{font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+.tick{overflow:hidden;background:#0b0f17;color:#e6c17a;border-block:1px solid #e6c17a40;padding:14px 0}
+.tick div{display:flex;width:max-content;animation:mq 50s linear infinite;font:italic 500 1.35rem 'Cormorant Garamond',serif}.tick span{padding:0 34px;white-space:nowrap}.tick span:before{content:"◆";margin-right:34px;font-size:.6rem;vertical-align:middle}
+@keyframes mq{to{transform:translateX(-50%)}}
+section.s{padding:96px 6vw;max-width:1280px;margin:auto}
+h2{font:700 clamp(2rem,5vw,3.6rem)/1.05 'Cormorant Garamond',serif;margin:.2em 0 .3em}.sub{color:var(--mut);max-width:620px}
+.inspector-app{display:grid;grid-template-columns:1.3fr .7fr;gap:22px;margin-top:30px}.inspector-card,.queue-card,.public-card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:22px}.inspector-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}.lang-switch{display:inline-flex;gap:8px;padding:6px;border-radius:999px;background:#101923;border:1px solid rgba(230,193,122,.28)}.lang-switch button{background:transparent;border:0;color:#ddd;border-radius:999px;padding:7px 12px;cursor:pointer}.lang-switch button.active{background:linear-gradient(100deg,#f0cf86,#c58b3a);color:#17130d;font-weight:700}.field-grid{display:grid;grid-template-columns:repeat(2,minmax(160px,1fr));gap:16px}.field{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}.field.full{grid-column:1 / -1}.field label{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}.field input,.field select,.field textarea{width:100%;background:rgba(12,17,24,.74);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font:inherit}.field textarea{min-height:94px;resize:vertical}.photo-pair{display:grid;grid-template-columns:repeat(2,minmax(140px,1fr));gap:14px;margin:10px 0 18px}.photo-box{min-height:160px;border:1px dashed rgba(230,193,122,.5);background:rgba(8,13,18,.5);border-radius:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;position:relative}.photo-box img{max-width:100%;max-height:100%;object-fit:cover;display:block}.photo-box input{display:none}.quality-pill{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;border:1px solid rgba(230,193,122,.5);font-size:.76rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);background:rgba(15,22,31,.6)}.quality-good{color:#7fe7af;border-color:rgba(127,231,175,.6)}.quality-bad{color:#ff9d7f;border-color:rgba(255,157,127,.6)}.queue-card ul,.ward-score-list,.alert-list{list-style:none;padding:0;margin:0}.queue-card li,.ward-score-list li,.alert-list li{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}.queue-card li:last-child,.ward-score-list li:last-child,.alert-list li:last-child{border-bottom:0}.queue-meta{display:flex;flex-direction:column}.small-tag{display:inline-block;padding:4px 8px;border-radius:999px;background:rgba(230,193,122,.1);color:var(--gold);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase}.sync-btn,.primary-btn{padding:12px 18px;border:0;border-radius:12px;background:linear-gradient(100deg,#f0cf86,#c58b3a);color:#17130d;font-weight:700;cursor:pointer}.sync-btn.secondary{background:transparent;color:#e0c484;border:1px solid rgba(230,193,122,.5)}.score-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(12,17,24,.72);border:1px solid var(--line);border-radius:14px;margin-top:10px}.score-row strong{font-size:1.5rem}.score-row span{color:var(--mut)}.progress{height:8px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden;margin-top:10px}.progress > i{display:block;height:100%;width:38%;background:linear-gradient(90deg,#efc56c,#d77f38)}.public-grid{display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:20px;margin-top:22px}.public-card h3{margin:0 0 18px;font-size:1.4rem}.public-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.report-form{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:14px}.report-form .field{margin-bottom:0}.report-form .field.full{grid-column:1 / -1}.report-status{margin-top:12px;color:#bfe6cb;font-size:.85rem;min-height:1.2em}.report-preview{display:flex;align-items:center;gap:10px;margin-top:8px;color:var(--mut);font-size:.85rem}.ward-score-list li{align-items:center}.ward-score-metric{display:flex;flex-direction:column;align-items:flex-end;gap:4px}.ward-score-metric b{font-size:1.1rem}.ward-score-metric span{color:var(--mut);font-size:.75rem}.alert-list li{align-items:flex-start}.alert-card{display:flex;flex-direction:column;gap:6px}.alert-card strong{font-size:.95rem}.alert-card small{color:var(--mut)}.alert-tag{display:inline-flex;padding:4px 8px;border-radius:999px;background:rgba(136,214,255,.1);color:#8ed6ff;border:1px solid rgba(136,214,255,.25);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase}
+.ctl{display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin:26px 0;padding:18px 22px;border:1px solid var(--line);border-radius:18px;background:var(--card)}
+.ctl label{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
+.ctl input[type=range]{accent-color:#c58b3a;width:220px;vertical-align:middle}.ctl select{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px}
+.twin-controls{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:12px;margin:18px 0 22px}.twin-filter{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border:1px solid var(--line);background:var(--card);border-radius:14px}.twin-filter label{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}.twin-filter select,.twin-filter input{background:rgba(9,13,18,.8);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 10px}.twin-filter.wide{grid-column:span 2}.map-toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}.legend-chip{display:inline-flex;padding:7px 12px;border:1px solid rgba(230,193,122,.3);border-radius:999px;background:rgba(15,22,29,.72);color:#f0dca5;font-size:.68rem;letter-spacing:.13em;text-transform:uppercase}.map-layer-toggle{cursor:pointer;font:inherit}.map-layer-toggle[aria-pressed="true"]{background:#243b42;border-color:#67d6a4;color:#a6f2ce}.cross-benefit-note{margin:-5px 0 18px;color:var(--mut);font-size:.83rem}.cross-benefit-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:18px}.cross-benefit-kpis .k{padding:15px 18px}.cross-benefit-kpis .k b{font-size:2.2rem}.cross-benefit-kpis .k span{display:block;line-height:1.5}
+.confidence-card{margin:14px 0;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:rgba(12,17,24,.55)}.confidence-card.low{border-color:#e9a23b;color:#f2c77b}.confidence-card strong{display:block}.correction-form{margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}.correction-form h3{margin:0 0 6px;font-size:1.2rem}.correction-form p,.correction-status{color:var(--mut);font-size:.84rem}.correction-fields{display:grid;grid-template-columns:repeat(2,minmax(100px,1fr));gap:10px}.correction-fields label{display:flex;flex-direction:column;gap:5px;color:var(--mut);font-size:.75rem}.correction-fields input{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:rgba(9,13,18,.8);color:var(--ink);font:inherit}.correction-fields .full{grid-column:1/-1}
+.gov-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:24px}.gov-card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;min-width:0}.gov-card h3{margin:0 0 14px;font:700 1.5rem 'Cormorant Garamond',serif}.gov-toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin:22px 0}.gov-toolbar .field{margin:0;min-width:180px}.gov-actions{display:flex;gap:10px;flex-wrap:wrap}.gov-table-wrap{overflow:auto}.gov-table{width:100%;border-collapse:collapse;text-align:left;font-size:.87rem}.gov-table th,.gov-table td{padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap}.gov-table th{color:var(--mut);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase}.gov-note{color:var(--mut);font-size:.84rem}.audit-list{list-style:none;padding:0;margin:0;max-height:360px;overflow:auto}.audit-list li{padding:12px 0;border-bottom:1px solid var(--line)}.audit-list li:last-child{border-bottom:0}.audit-list small{display:block;color:var(--mut)}.role-chip{display:inline-flex;padding:4px 9px;border-radius:99px;border:1px solid var(--line);color:var(--gold);font-size:.72rem;text-transform:uppercase}.role-toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.role-toolbar label{color:var(--mut);font-size:.8rem}.role-toolbar input,.role-toolbar select,.gov-toolbar select{background:rgba(9,13,18,.8);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit}.role-hidden{display:none!important}
+@media(max-width:800px){.gov-grid{grid-template-columns:1fr}.gov-toolbar .field{flex:1}.role-toolbar{width:100%}}@media(max-width:520px){.gov-card{padding:16px}.cross-benefit-kpis{grid-template-columns:1fr 1fr}.gov-actions button{flex:1}}
+#rv{font:700 1.5rem 'Cormorant Garamond',serif;color:var(--gold);min-width:70px;display:inline-block}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:18px}
+.k{padding:20px;border-radius:18px;background:var(--card);border:1px solid var(--line)}.k b{font:700 3rem/1 'Cormorant Garamond',serif;display:block}.k span{font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
+.grid{display:grid;grid-template-columns:1.25fr 1fr;gap:18px}@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.mapw{position:relative;border-radius:22px;overflow:hidden;min-height:440px;background:radial-gradient(circle at 50% 60%,#16202f,#070a10);border:1px solid #e6c17a40}
+#map{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;background:#071018}.mapw small{position:absolute;left:16px;bottom:12px;color:#9a9486;font-size:.72rem;z-index:1}.leaflet-container{background:#071018}.leaflet-control-zoom a{color:#0d1723 !important}.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#0f1724;border:1px solid rgba(230,193,122,.3);color:#f0ead8}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px}
+#list{list-style:none;margin:0;padding:0;max-height:330px;overflow:auto}
+#list li{display:flex;gap:12px;align-items:center;padding:9px 8px;border-radius:12px;cursor:pointer}#list li:hover,#list li.on{background:#c58b3a1f}
+#list b{width:22px;color:var(--mut);font-weight:500}#list span{flex:1;min-width:0;position:relative;padding-bottom:7px}#list em{font-style:normal;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.9rem}
+#list small{color:var(--mut);font-size:.72rem}#list i{position:absolute;left:0;bottom:0;height:3px;border-radius:3px}
+#det{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}#det h4{font:700 1.5rem 'Cormorant Garamond',serif;margin:0}#det p{margin:.2em 0;color:var(--mut);font-size:.88rem}.cond{font-style:italic}
+.big{font:700 3.2rem/1 'Cormorant Garamond',serif}.big small{font:400 .8rem Inter;color:var(--mut);margin-left:6px}
+.fb{display:flex;align-items:center;gap:10px;font-size:.78rem;margin-top:6px}.fb span{width:70px;color:var(--mut)}.fb i{flex:1;height:5px;border-radius:5px;background:var(--line)}.fb b{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#e6c17a,#c4443a)}
+#wi{color:var(--gold);font-weight:600;font-size:.9rem}
+.insp{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:24px}@media(max-width:800px){.insp{grid-template-columns:1fr}}
+.drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:280px;border:1.5px dashed var(--gold);border-radius:22px;background:var(--card);cursor:pointer;text-align:center;padding:20px;overflow:hidden}
+.drop img{max-width:100%;max-height:260px;border-radius:14px}.drop input{display:none}
+.chip{display:inline-block;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:99px;border:1px solid var(--gold);color:var(--gold)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;margin-top:30px}
+.st{padding:30px;border-radius:22px;background:var(--card);border:1px solid var(--line)}.st b{font:700 4rem/1 'Cormorant Garamond',serif;background:linear-gradient(#e6c17a,#a97a2c);-webkit-background-clip:text;background-clip:text;color:transparent}.st h3{font:700 1.5rem 'Cormorant Garamond',serif;margin:.3em 0}.st p{color:var(--mut);margin:0}
+.fin{position:relative;text-align:center;color:#efe8d8;padding:130px 8vw;background:radial-gradient(50% 70% at 50% 100%,#e0a24a50,#0000),linear-gradient(#0b1220,#05070c)}
+.fin q{display:block;font:italic 500 clamp(1.8rem,5vw,3.8rem)/1.15 'Cormorant Garamond',serif;max-width:900px;margin:0 auto 30px;quotes:none}
+footer{padding:26px 6vw;text-align:center;color:var(--mut);font-size:.8rem}
+.rv{opacity:0;transform:translateY(26px);transition:.9s}.rv.in{opacity:1;transform:none}
+ .hero-actions{display:flex;flex-wrap:wrap;gap:14px;margin-top:20px}.hero-rail{display:grid;grid-template-columns:repeat(3,minmax(130px,1fr));gap:12px;max-width:540px;margin-top:28px}.hero-pill{padding:14px 16px;border:1px solid rgba(230,193,122,.35);background:rgba(16,24,34,.35);backdrop-filter:blur(8px);border-radius:14px;display:flex;flex-direction:column;gap:4px}.hero-pill strong{font-size:1.05rem;color:#f8e4af}.hero-pill span{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:#d7c9a8}.feature-band{padding-top:30px}.feature-grid{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:18px}.feature-card{padding:22px 20px;border-radius:20px;border:1px solid var(--line);background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));box-shadow:0 18px 36px rgba(6,10,15,.12)}.feature-card .eyebrow{letter-spacing:.14em;margin-bottom:10px}.feature-card h3{margin:0 0 8px;font:700 1.5rem/1.1 'Cormorant Garamond',serif}.feature-card p{margin:0;color:var(--mut);font-size:.95rem}
+@media(max-width:700px){nav a{display:none}nav a:last-child{display:inline}.b2{margin:10px 0 0}.hero-rail{grid-template-columns:repeat(2,minmax(120px,1fr))}.hero-trust{grid-template-columns:1fr}.feature-grid{grid-template-columns:1fr 1fr}.hero-actions{flex-direction:column;align-items:flex-start}}@media(max-width:520px){.feature-grid{grid-template-columns:1fr}.hero-rail{grid-template-columns:1fr}.hero-trust{grid-template-columns:1fr}.hero-actions a{width:100%;text-align:center}} 
+/* Public-sector visual refresh */
+:root{--bg:#f2f6f3;--ink:#17312f;--mut:#5f726e;--card:#fff;--line:#dce7e1;--gold:#137c70}
+body{font-family:"DM Sans","Segoe UI",system-ui,sans-serif;background-image:radial-gradient(ellipse at 8% 26%,rgba(19,124,112,.055),transparent 34%),radial-gradient(ellipse at 92% 58%,rgba(218,169,88,.06),transparent 30%)}
+h1,h2,.serif,.feature-card h3,.gov-card h3{font-family:Manrope,"Segoe UI",sans-serif;letter-spacing:-.045em}
+h2{font-weight:750;letter-spacing:-.055em}
+nav{padding-left:6vw;padding-right:6vw;background:linear-gradient(180deg,rgba(8,29,29,.88),rgba(8,29,29,.44));backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.12)}
+nav b{font-family:Manrope,"Segoe UI",sans-serif;font-size:1.3rem;letter-spacing:-.04em}
+nav a{font-size:.75rem;font-weight:600;letter-spacing:.08em;transition:opacity .2s,color .2s}
+nav a:hover{opacity:1;color:#9ce2ce}
+.hero{min-height:92vh;background-image:linear-gradient(90deg,rgba(7,26,28,.86) 0%,rgba(7,26,28,.66) 48%,rgba(7,26,28,.28) 100%),linear-gradient(0deg,rgba(7,26,28,.4),transparent 56%),url("https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=2200&q=85");background-position:center;background-size:cover}
+.hero:before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,rgba(7,26,28,.36),rgba(7,26,28,.08) 72%),linear-gradient(0deg,rgba(7,26,28,.25),transparent 60%)}
+.hero-video{position:absolute;inset:0;z-index:0;width:100%;height:100%;object-fit:cover;object-position:center}
+.hero:after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(115deg,transparent 54%,rgba(171,222,211,.08) 54.1%,transparent 54.4%)}
+.hero svg,.hero canvas{z-index:2;pointer-events:none}
+.moon{display:none}.hero canvas{opacity:.3}.hero svg{opacity:.65}
+.hc{max-width:1150px;padding-top:160px;padding-bottom:100px}
+.eyebrow{font-family:"DM Sans",sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.18em}
+h1{font-size:clamp(3.1rem,8vw,6.8rem);letter-spacing:-.065em}
+h1 em{background:linear-gradient(100deg,#a5ead4,#f1cf86);-webkit-background-clip:text;background-clip:text}
+#q{font-family:Manrope,"Segoe UI",sans-serif;font-style:normal;color:#e0eeea}
+.b1{background:linear-gradient(110deg,#a7e8d2,#70c7ad);color:#102b2b;box-shadow:0 12px 28px rgba(37,144,119,.22)}
+.b2{border-color:rgba(197,235,221,.72);color:#eef8f4;background:rgba(9,33,34,.32);backdrop-filter:blur(10px)}
+.btn{transition:transform .2s,box-shadow .2s,background .2s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 15px 32px rgba(0,0,0,.2)}
+.hero-pill{background:rgba(8,31,32,.48);border-color:rgba(191,233,218,.34);backdrop-filter:blur(12px)}
+.hero-pill strong,.stats b{color:#b5efda}
+.hero-pill span{color:#d8e9e3}
+.stats{margin-top:38px}
+.stats div{border-color:rgba(181,239,218,.6)}
+section.s{max-width:1440px;padding:clamp(60px,8vw,104px) 6vw}
+.feature-band{padding-top:30px!important;padding-bottom:68px!important}
+.feature-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.feature-card,.k,.inspector-card,.queue-card,.public-card,.gov-card,.st,.panel{box-shadow:0 12px 40px rgba(21,58,49,.055);transition:transform .25s,box-shadow .25s}
+.feature-card:hover,.st:hover{transform:translateY(-4px);box-shadow:0 18px 48px rgba(21,58,49,.1)}
+.feature-card{border-radius:17px;background:rgba(255,255,255,.78);padding:24px}
+.feature-card h3{letter-spacing:-.035em}
+.tick{background:#123a37;color:#b5efda;border-color:#ffffff20}
+.impact-section{--ink:#17312f;--mut:#5f726e;--gold:#137c70;color:#17312f;max-width:none!important;padding:clamp(68px,8vw,108px) 6vw!important;background:linear-gradient(180deg,#e8f0ec,#f2f6f3)}
+.impact-inner{max-width:1320px;margin:0 auto}
+.impact-heading{display:flex;justify-content:space-between;align-items:end;gap:28px;margin-bottom:30px}
+.impact-heading h2{max-width:700px}
+.impact-heading p{max-width:370px;color:var(--mut);margin:0 0 8px}
+.impact-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.impact-card{position:relative;min-height:390px;border-radius:22px;overflow:hidden;color:#fff;background:#163b38;isolation:isolate}
+.impact-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;transition:transform .6s}
+.impact-card:hover img{transform:scale(1.045)}
+.impact-card:after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(0deg,rgba(7,25,27,.94),rgba(7,25,27,.08) 75%)}
+.impact-copy{position:absolute;left:clamp(22px,4vw,38px);right:clamp(22px,4vw,38px);bottom:28px}
+.impact-label{display:inline-flex;padding:6px 10px;border-radius:99px;background:rgba(10,38,37,.56);border:1px solid rgba(255,255,255,.35);font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.impact-copy h3{font:700 clamp(1.45rem,2.8vw,2.2rem)/1.13 Manrope,sans-serif;letter-spacing:-.045em;margin:13px 0 7px}
+.impact-copy p{max-width:520px;margin:0;color:#dceae6;font-size:.92rem}
+.media-section{max-width:none!important;padding:clamp(68px,8vw,100px) 6vw!important;background:#102f2f;color:#eff7f3}
+.media-inner{max-width:1320px;margin:auto}
+.media-section .sub{color:#c0d5ce}
+.media-heading{display:flex;justify-content:space-between;align-items:end;gap:24px;margin-bottom:28px}
+.media-heading h2{max-width:740px}
+.video-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.video-card{display:block;position:relative;height:300px;min-height:0;overflow:hidden;border:1px solid rgba(255,255,255,.16);border-radius:18px;color:#fff;background:#163b38}
+.video-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.78;transition:transform .5s,opacity .3s}
+.video-card:after{content:"";position:absolute;inset:0;z-index:0;background:linear-gradient(0deg,rgba(5,23,24,.92),rgba(5,23,24,.03) 82%);pointer-events:none}
+.video-card:hover img{transform:scale(1.05);opacity:.95}
+.play-button{position:absolute;top:22px;left:22px;width:52px;height:52px;z-index:2;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:#b5efda;color:#113432;box-shadow:0 8px 22px #071a1a55;cursor:pointer}
+.play-button:before{content:"";margin-left:4px;border-top:8px solid transparent;border-bottom:8px solid transparent;border-left:12px solid currentColor}
+.play-button:focus-visible{outline:3px solid #fff;outline-offset:4px}
+.video-copy{position:absolute;z-index:1;left:22px;right:22px;bottom:20px;pointer-events:none}
+.video-copy small{color:#b5efda;font-size:.68rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase}
+.video-copy strong{display:block;margin-top:7px;font:700 1.15rem/1.3 Manrope,sans-serif}
+.video-card iframe{position:absolute;inset:0;z-index:3;width:100%;height:100%;border:0;background:#000}
+.media-note{margin:18px 0 0;color:#b6cbc4;font-size:.78rem}
+.fin{background-image:linear-gradient(90deg,rgba(7,26,28,.70),rgba(7,26,28,.45)),url("https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1800&q=80");background-position:center 58%;background-size:cover}
+footer{background:#0d2728;color:#b8ccc5}
+.rv{transition:opacity .65s,transform .65s}
+.feature-band,.s#dash,.s#inspectors,.s#public-layer,.s#ai,.s#governance,.s#how{--bg:#f2f6f3;--ink:#17312f;--mut:#5f726e;--card:#fff;--line:#dce7e1;--gold:#137c70;color:var(--ink);border-radius:24px;background-position:center;background-size:cover}
+.feature-band{background-image:linear-gradient(rgba(242,246,243,.58),rgba(242,246,243,.74)),url("https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1800&q=80")}
+.s#dash{background-image:linear-gradient(rgba(242,246,243,.60),rgba(242,246,243,.76)),url("https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=1800&q=80")}
+.s#inspectors{background-image:linear-gradient(rgba(242,246,243,.60),rgba(242,246,243,.76)),url("https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1800&q=80")}
+.s#public-layer{background-image:linear-gradient(rgba(242,246,243,.60),rgba(242,246,243,.76)),url("https://images.unsplash.com/photo-1527489377706-5bf97e608852?auto=format&fit=crop&w=1800&q=80")}
+.s#ai{background-image:linear-gradient(rgba(232,240,236,.60),rgba(242,246,243,.76)),url("https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1800&q=80")}
+.s#governance{background-image:linear-gradient(rgba(242,246,243,.60),rgba(242,246,243,.76)),url("https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1800&q=80")}
+.s#how{background-image:linear-gradient(rgba(242,246,243,.58),rgba(242,246,243,.74)),url("https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=1800&q=80")}
+.impact-section{background-image:linear-gradient(rgba(232,240,236,.50),rgba(242,246,243,.68)),url("https://images.unsplash.com/photo-1527489377706-5bf97e608852?auto=format&fit=crop&w=1800&q=80")}
+.media-section{background-image:linear-gradient(rgba(16,47,47,.58),rgba(16,47,47,.72)),url("https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=2000&q=80")}
+.feature-card{background:rgba(255,255,255,.92)}
+.k,.inspector-card,.queue-card,.public-card,.gov-card,.st,.panel{background-color:rgba(255,255,255,.94)}
+@media(max-width:1000px){.public-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.public-card{min-width:0}}
+@media(max-width:900px){.impact-heading,.media-heading{display:block}.impact-heading p{margin-top:12px}.video-grid{grid-template-columns:1fr 1fr}.video-card:last-child{grid-column:1/-1}.feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:800px){.inspector-app{grid-template-columns:1fr}}
+@media(max-width:700px){.hero{min-height:86vh;background-position:58% center}.hc{padding:128px 6vw 72px}.impact-grid{grid-template-columns:1fr}.impact-card{min-height:340px}.video-grid{grid-template-columns:1fr}.video-card,.video-card:last-child{grid-column:auto;width:100%;min-width:0;height:260px;min-height:0}.hero-rail{grid-template-columns:repeat(3,minmax(0,1fr))}.hero-pill{padding:12px}.stats{gap:20px}.stats b{font-size:2.1rem}}
+@media(max-width:620px){.public-grid{grid-template-columns:1fr}.report-form{grid-template-columns:minmax(0,1fr)}.report-form .field.full{grid-column:auto}}
+@media(max-width:520px){.feature-grid{grid-template-columns:1fr}.hero-rail{grid-template-columns:repeat(3,minmax(0,1fr))}.hero-pill strong{font-size:.92rem}.hero-pill span{font-size:.58rem;letter-spacing:.07em}.impact-card{min-height:320px}.impact-section,.media-section{padding-left:20px!important;padding-right:20px!important}.inspector-app,.inspector-card,.queue-card,.field{min-width:0}.field-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){.hero-video{display:none}}
+
+/* ===== Polish & colour-consistency layer ===== */
+:root{color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#f2f6f3;--ink:#17312f;--mut:#5f726e;--card:#fff;--line:#dce7e1;--gold:#137c70}}
+:root[data-theme="dark"]{--bg:#f2f6f3;--ink:#17312f;--mut:#5f726e;--card:#fff;--line:#dce7e1;--gold:#137c70}
+nav b,.stats b,.tick div,.big,.k b,#rv,#det h4,.st b,.st h3,.fin q,.impact-copy h3,.gov-card h3,.feature-card h3,h1,h2,#q{font-family:Manrope,"Segoe UI",system-ui,sans-serif!important}
+.tick div{font-style:normal;font-weight:600;font-size:1.05rem}
+.fin q{font-style:normal;font-weight:700;letter-spacing:-.04em}
+.field input,.field select,.field textarea,.twin-filter select,.twin-filter input,.correction-fields input,.role-toolbar input,.role-toolbar select,.gov-toolbar select,.gov-toolbar input,.ctl select{background:#f7faf8!important;color:#17312f!important;border:1px solid #cfdcd5!important;border-radius:12px;transition:border-color .2s,box-shadow .2s}
+.field input:focus,.field select:focus,.field textarea:focus,.twin-filter select:focus,.correction-fields input:focus,.role-toolbar input:focus,.role-toolbar select:focus{outline:0;border-color:#137c70!important;box-shadow:0 0 0 3px rgba(19,124,112,.18)}
+.photo-box{background:#f2f7f4!important;border-color:#137c70!important}.photo-box span{color:#5f726e}
+.score-row,.confidence-card{background:#f2f7f4!important;color:#17312f}
+.confidence-card.low{background:#fff6e3!important;border-color:#e0a23b;color:#7a4e08}
+.legend-chip{background:#e8f2ee;color:#17504a;border-color:#bcd8cf}
+.map-layer-toggle[aria-pressed="true"]{background:#137c70;color:#fff;border-color:#137c70}
+.small-tag{background:#e3f1ec;color:#0f6b60}
+.alert-tag{background:#e4f3fb;color:#0b6a93;border-color:#b9dcec}
+.report-status{color:#0f6b60}.progress{background:#e2ece7}
+.sync-btn.secondary{color:#0f6b60;border-color:#137c70}.sync-btn.secondary:hover{background:#e3f1ec}
+.lang-switch{background:#123a37}
+#list li:hover,#list li.on{background:#137c701a}
+.gov-table tbody tr:hover{background:#f2f7f4}
+.quality-pill{background:#e6f6ee;color:#0f6b3f;border-color:#8fd3b0}
+.quality-pill.quality-bad{background:#fff0e8;color:#a33a14;border-color:#f0a98a}
+.primary-btn,.sync-btn{transition:transform .2s,box-shadow .2s}
+.primary-btn:hover,.sync-btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(19,124,112,.2)}
+.primary-btn{background:linear-gradient(110deg,#a7e8d2,#5fbfa3);color:#0d2e2b}
+:focus-visible{outline:3px solid #137c70;outline-offset:3px;border-radius:6px}
+.hero :focus-visible,.media-section :focus-visible,.fin :focus-visible,nav :focus-visible{outline-color:#b5efda}
+.tick:hover div{animation-play-state:paused}
+.mapw{min-height:480px}
+.mapw small{background:rgba(255,255,255,.85);color:#17312f;padding:3px 8px;border-radius:8px}
+.leaflet-popup-content-wrapper{background:#fff!important;color:#17312f!important;border-color:#cfdcd5!important}.leaflet-popup-tip{background:#fff!important}
+.k span{color:#5f726e}
+.media-section h2{color:#eff7f3}.media-section .eyebrow{color:#b5efda}.media-section .sub,.media-section .media-note{color:#c0d5ce}
+.impact-section .media-note{color:#5f726e}
+.hero .hc p{color:#f3f8f5}
+.public-card,.inspector-card,.queue-card{min-width:0}.gov-table-wrap{-webkit-overflow-scrolling:touch}
+@media(max-width:700px){.mapw{min-height:360px}.ctl input[type=range]{width:100%}.ctl>div{width:100%}.twin-controls{grid-template-columns:1fr 1fr}.twin-filter.wide{grid-column:1/-1}}
+@media(prefers-reduced-motion:reduce){.tick div{animation:none}.rv{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}.hero canvas{display:none}}
+</style></head><body>
+<nav><b>Drain<i>Ops</i> AI</b><div><a href="#dash">Dashboard</a><a href="#ai">Inspector</a><a href="#public-layer">Public</a><a href="#governance">Governance</a><a href="login.html">Staff login</a><a href="#how">Method</a></div></nav>
+
+<header class="hero"><video class="hero-video" autoplay muted loop playsinline preload="metadata" poster="https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=2200&q=85" aria-hidden="true" tabindex="-1"><source src="Video%20Project%2011.mp4" type="video/mp4"></video><div class="moon"></div><canvas id="rain"></canvas><svg id="sky" viewBox="0 0 1200 300" preserveAspectRatio="none"></svg>
+<div class="hc"><div class="eyebrow">Drainage intelligence · Eastern India</div>
+<h1>Forecast the flood.<br><em>Clear the drain first.</em></h1>
+<p id="q"></p>
+<div class="hero-actions"><a class="btn b1" href="#dash">Open live dashboard</a><a class="btn b2" href="#ai">Try the AI inspector</a></div>
+<div class="hero-trust">
+  <div class="trust-item"><div><strong>Local-first</strong><span>Offline-ready field checks</span></div></div>
+  <div class="trust-item"><div><strong>AI scoring</strong><span>Actionable photo insight</span></div></div>
+  <div class="trust-item"><div><strong>Public alerts</strong><span>Shared risk visibility</span></div></div>
+</div>
+<div class="hero-rail"><div class="hero-pill"><strong>101</strong><span>Drains mapped</span></div><div class="hero-pill"><strong>24h</strong><span>Weather lead</span></div><div class="hero-pill"><strong>AI</strong><span>Photo scoring</span></div></div>
+<div class="stats"><div><b data-to="101">0</b><span>Drains in the twin</span></div><div><b data-to="3">0</b><span>States covered</span></div><div><b data-to="48">0</b><span>Hours of warning</span></div><div><b data-to="0">0</b><span>Extra hardware needed</span></div></div></div></header>
+
+<section class="s feature-band rv"><div class="feature-grid">
+<div class="feature-card"><div class="eyebrow" style="color:var(--gold)">Predict</div><h3>Risk before rain</h3><p>Forecast conditions and rank the drains most likely to fail within the next 24 hours.</p></div>
+<div class="feature-card"><div class="eyebrow" style="color:var(--gold)">Inspect</div><h3>AI from a photo</h3><p>Turn a mobile snapshot into a blockage confidence score, debris label, and action priority.</p></div>
+<div class="feature-card"><div class="eyebrow" style="color:var(--gold)">Dispatch</div><h3>Crews before floods</h3><p>Generate work orders sorted by urgency, so teams clean the highest-risk drains first.</p></div>
+<div class="feature-card"><div class="eyebrow" style="color:var(--gold)">Learn</div><h3>Improve each season</h3><p>Use field corrections to retrain the model and sharpen critical-risk recall year after year.</p></div>
+</div></section>
+
+<div class="tick"><div><span>A city is only as resilient as its smallest drain.</span><span>Don't wait for the flood. Forecast it.</span><span>Every monsoon reveals what we neglected.</span><span>Clean drains are the quietest infrastructure.</span><span>The best rescue is the one nobody needs.</span>
+<span>A city is only as resilient as its smallest drain.</span><span>Don't wait for the flood. Forecast it.</span><span>Every monsoon reveals what we neglected.</span><span>Clean drains are the quietest infrastructure.</span><span>The best rescue is the one nobody needs.</span></div></div>
+
+<section class="s impact-section" id="challenge">
+  <div class="impact-inner">
+    <div class="impact-heading">
+      <div><div class="eyebrow" style="color:var(--gold)">The challenge · the response</div><h2>Make monsoon risk visible. Make every intervention count.</h2></div>
+      <p>From waterlogged streets to proactive maintenance, DrainOps connects local observations with a clear, trackable response.</p>
+    </div>
+    <div class="impact-grid">
+      <article class="impact-card">
+        <img src="https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=1400&q=85" alt="Heavy rain and floodwater illustrating urban waterlogging risk" loading="lazy">
+        <div class="impact-copy"><span class="impact-label">01 · The challenge</span><h3>Waterlogging disrupts everyday life.</h3><p>Intense rainfall and blocked drainage can turn streets, crossings, and neighbourhoods into flood hotspots.</p></div>
+      </article>
+      <article class="impact-card">
+        <img src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1400&q=85" alt="Infrastructure workers on site, illustrating coordinated maintenance response" loading="lazy">
+        <div class="impact-copy"><span class="impact-label">02 · The response</span><h3>Find, prioritize, and clear drains before the rain.</h3><p>Risk-ranked inspections help public works teams focus effort, document completed work, and learn from each season.</p></div>
+      </article>
+    </div>
+    <p class="media-note" style="color:var(--mut)">All background and gallery photos are illustrative stock images; they do not depict verified DrainOps pilot locations or incident records.</p>
+  </div>
+</section>
+
+<section class="s media-section" id="stories">
+  <div class="media-inner">
+    <div class="media-heading"><div><div class="eyebrow">Learn · see the bigger picture</div><h2>Videos on urban flooding and resilient cities.</h2><p class="sub">An India-focused explainer, a WRI India solutions masterclass, and a disaster-management webinar from the Ministry of Home Affairs.</p></div></div>
+    <div class="video-grid">
+      <article class="video-card" data-video-id="i7yLNi4JYxY">
+        <img src="https://i.ytimg.com/vi/i7yLNi4JYxY/hqdefault.jpg" alt="" loading="lazy">
+        <button class="play-button" type="button" aria-label="Play Why Does Heavy Rain Flood Indian Cities? from Mrityunjay Pal"></button>
+        <span class="video-copy"><small>01 · Understand the risk · Mrityunjay Pal · 8 min</small><strong>Why Does Heavy Rain Flood Indian Cities?</strong></span>
+      </article>
+      <article class="video-card" data-video-id="arHpRHZHjXQ">
+        <img src="https://i.ytimg.com/vi/arHpRHZHjXQ/hqdefault.jpg" alt="" loading="lazy">
+        <button class="play-button" type="button" aria-label="Play Integrating Nature-based Solutions in Urban Flood Management from WRI India"></button>
+        <span class="video-copy"><small>02 · Explore solutions · WRI India · 1 hr 20 min</small><strong>Integrating Nature-based Solutions in Urban Flood Management</strong></span>
+      </article>
+      <article class="video-card" data-video-id="ablrxo6dyKM">
+        <img src="https://i.ytimg.com/vi/ablrxo6dyKM/hqdefault.jpg" alt="" loading="lazy">
+        <button class="play-button" type="button" aria-label="Play Urban Flood and its Impact, a webinar from the National Institute of Disaster Management"></button>
+        <span class="video-copy"><small>03 · Public-sector perspective · NIDM, Ministry of Home Affairs · Webinar</small><strong>Urban Flood and its Impact</strong></span>
+      </article>
+    </div>
+    <p class="media-note">Selected public YouTube videos are embedded only after you press play. Publishers retain their own content and views; their inclusion does not imply endorsement by DrainOps AI.</p>
+  </div>
+</section>
+
+<section class="s rv" id="dash" data-visible-roles="supervisor,engineer,admin"><div class="eyebrow" style="color:var(--gold)">Predictive risk dashboard</div>
+<h2>See tomorrow's waterlogging <em class="serif" style="color:var(--gold)">today.</em></h2>
+<p class="sub">101 registered drains across West Bengal, Bihar and Jharkhand. Move the rainfall slider and every score recalculates.</p>
+<div class="ctl"><div><label>24h rain forecast</label><br><input id="rain-in" type="range" min="0" max="100" value="18"> <span id="rv"></span></div>
+<div><label>State</label><br><select id="st"><option>All</option><option>West Bengal</option><option>Bihar</option><option>Jharkhand</option></select></div>
+<button class="btn b1" id="wb" type="button">Clear the 10 riskiest drains</button><span id="wi"></span></div>
+<div class="twin-controls">
+  <div class="twin-filter"><label>Ward</label><select id="ward-filter"><option>All</option></select></div>
+  <div class="twin-filter"><label>Severity</label><select id="severity-filter"><option>All</option><option>Critical</option><option>Warning</option><option>Healthy</option></select></div>
+  <div class="twin-filter"><label>Last cleaned</label><select id="cleaned-filter"><option>All</option><option value="30">Within 30 days</option><option value="90">Within 90 days</option><option value="180">Within 180 days</option></select></div>
+  <div class="twin-filter"><label>Debris</label><select id="debris-filter"><option>All</option><option>Plastic</option><option>Silt</option><option>Organic</option><option>Mixed</option></select></div>
+  <div class="twin-filter wide"><label>Time slider</label><input id="time-slice" type="range" min="0" max="9" value="5"><span id="time-label">Week 6</span></div>
+</div>
+<div class="map-toolbar"><span class="legend-chip">Network graph</span><span class="legend-chip">Low-lying layer</span><span class="legend-chip">Flood-history heat</span><span class="legend-chip">Ward boundaries</span><button class="legend-chip map-layer-toggle" type="button" data-map-layer="mosquito" aria-pressed="false">Mosquito-risk layer · off</button><button class="legend-chip map-layer-toggle" type="button" data-map-layer="plastic" aria-pressed="false">Plastic hotspots · off</button></div>
+<p class="cross-benefit-note">Cross-benefit overlays are estimates from drain-condition text, blockage, and forecast rain—not verified standing-water, waste-composition, or disease-surveillance data.</p>
+<div class="cross-benefit-kpis"><div class="k"><b id="mosquito-risk-count" style="color:#b886f5">0</b><span>Potential mosquito-breeding flags · estimated</span></div><div class="k"><b id="plastic-hotspot-count" style="color:#f28b5b">0</b><span>Plastic-dominant drain hotspots · estimated</span></div></div>
+<div class="kpis"><div class="k"><b id="kc" style="color:#e2574c">0</b><span>Critical</span></div><div class="k"><b id="kw" style="color:#e9a23b">0</b><span>Warning</span></div><div class="k"><b id="kh">0</b><span>Avg health /100</span></div><div class="k"><b id="kn">0</b><span>Drains monitored</span></div></div>
+<div class="grid"><div class="mapw"><div id="map"></div><small>Digital Twin · drain network · flood hotspots · ward boundaries</small></div>
+<div class="panel"><div class="eyebrow" style="color:var(--gold)">Priority work orders</div><ul id="list"></ul><div id="det"></div></div></div></section>
+
+<section class="s rv" id="inspectors" data-visible-roles="inspector,supervisor,admin"><div class="eyebrow" style="color:var(--gold)">Field inspector app</div><h2>Offline-ready checks for the crew on the ground.</h2>
+<p class="sub">Designed for low-connectivity lanes, before/after proof, and local-language workflows.</p>
+<div class="inspector-app">
+  <div class="inspector-card">
+    <div class="inspector-top">
+      <div>
+        <div class="eyebrow" style="color:var(--gold)">Inspection form</div>
+      </div>
+      <div class="lang-switch" aria-label="Language switcher">
+        <button class="active" data-lang="en" type="button">EN</button>
+        <button data-lang="hi" type="button">हिं</button>
+        <button data-lang="bn" type="button">বং</button>
+      </div>
+    </div>
+    <div class="field-grid">
+      <div class="field">
+        <label data-i18n="drainId">Drain ID / QR</label>
+        <input id="drain-id" value="DR-EST-021" />
+      </div>
+      <div class="field">
+        <label data-i18n="inspectorName">Inspector</label>
+        <input id="inspector-name" value="Rakesh S." />
+      </div>
+      <div class="field full">
+        <label data-i18n="photoPair">Before / after photo pair</label>
+        <div class="photo-pair">
+          <label class="photo-box" data-photo-box="before"><input type="file" accept="image/*" capture="environment" data-photo="before"><img id="preview-before" alt="Before" hidden><span data-i18n="beforeLabel">Before photo</span></label>
+          <label class="photo-box" data-photo-box="after"><input type="file" accept="image/*" capture="environment" data-photo="after"><img id="preview-after" alt="After" hidden><span data-i18n="afterLabel">After photo</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label data-i18n="depthStick">Depth-stick reading</label>
+        <input id="depth-stick" value="38 cm" />
+      </div>
+      <div class="field">
+        <label data-i18n="coverType">Cover type</label>
+        <select id="cover-type"><option>Concrete grate</option><option>Metal plate</option><option>Open channel</option><option>Brick culvert</option></select>
+      </div>
+      <div class="field full">
+        <label data-i18n="notes">Field notes</label>
+        <textarea id="field-notes">Silt buildup, strong odor near the inlet, slow flow after rain.</textarea>
+      </div>
+      <div class="field">
+        <label>QR / tag scan</label>
+        <button class="sync-btn secondary" id="scan-qr" type="button">Scan drain tag</button>
+      </div>
+      <div class="field">
+        <label>Voice note</label>
+        <button class="sync-btn secondary" id="voice-record" type="button">Record note</button>
+        <audio id="voice-preview" controls hidden style="margin-top:8px;width:100%"></audio>
+      </div>
+      <div class="field full">
+        <label data-i18n="qualityCheck">Photo quality check</label>
+        <div class="quality-pill quality-good" id="photo-quality">✔ Clear image, drain visible</div>
+      </div>
+      <div class="field full">
+        <div class="score-row"><span data-i18n="scoreImprovement">Score improvement</span><strong id="score-improvement">+26</strong></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;margin-top:18px;flex-wrap:wrap">
+      <button class="primary-btn" id="queue-inspection" type="button">Queue inspection</button>
+      <button class="sync-btn secondary" id="sync-now" type="button">Sync now</button>
+    </div>
+  </div>
+  <div class="queue-card">
+    <div class="eyebrow" style="color:var(--gold)">Sync queue</div>
+    <div class="score-row" style="margin-bottom:12px"><span>Offline queue</span><strong id="queue-count">3</strong></div>
+    <div class="progress"><i id="queue-progress"></i></div>
+    <ul id="queue-list">
+      <li><div class="queue-meta"><strong>DR-EST-021</strong><small>Before/after pair ready</small></div><span class="small-tag">Queued</span></li>
+      <li><div class="queue-meta"><strong>DR-EST-018</strong><small>Voice note pending</small></div><span class="small-tag">Queued</span></li>
+      <li><div class="queue-meta"><strong>DR-EST-011</strong><small>Checklist + GPS lock</small></div><span class="small-tag">Synced</span></li>
+    </ul>
+  </div>
+</div>
+</section>
+
+<section class="s rv" id="public-layer">
+  <div class="eyebrow" style="color:var(--gold)">Citizen and public layer</div>
+  <h2>Residents, councillors, and crews see the same risk picture.</h2>
+  <div class="public-grid">
+    <div class="public-card">
+      <div class="public-header">
+        <h3>Citizen reporting</h3>
+        <span class="small-tag">Live queue</span>
+      </div>
+      <div class="report-form">
+        <div class="field">
+          <label>Resident name</label>
+          <input id="citizen-name" value="Aditi M." />
+        </div>
+        <div class="field">
+          <label>Ward</label>
+          <select id="citizen-ward"><option>Ward 5</option><option>Ward 7</option><option>Ward 9</option><option>Ward 12</option></select>
+        </div>
+        <div class="field full">
+          <label>Drain location</label>
+          <input id="citizen-location" value="Near Kamarhati market bus stand" />
+        </div>
+        <div class="field">
+          <label>Issue type</label>
+          <select id="citizen-issue"><option>Blocked inlet</option><option>Bad smell</option><option>Standing water</option><option>Overflowing culvert</option></select>
+        </div>
+        <div class="field">
+          <label>Urgency</label>
+          <select id="citizen-urgency"><option>High</option><option selected>Medium</option><option>Low</option></select>
+        </div>
+        <div class="field full">
+          <label>Photo upload</label>
+          <input id="citizen-photo" type="file" accept="image/*" capture="environment" />
+          <div class="report-preview" id="citizen-photo-status">No photo attached yet</div>
+        </div>
+        <div class="field full">
+          <button class="primary-btn" id="submit-citizen-report" type="button">Send citizen report</button>
+          <div class="report-status" id="citizen-report-status">Report queued for review.</div>
+        </div>
+      </div>
+      <div class="score-row" style="margin-top:18px"><span>Auto score</span><strong id="citizen-auto-score">82 / 100</strong></div>
+    </div>
+
+    <div class="public-card">
+      <div class="public-header">
+        <h3>Public ward scorecard</h3>
+        <span class="small-tag">Accountability</span>
+      </div>
+      <ul id="ward-score-list" class="ward-score-list"></ul>
+    </div>
+
+    <div class="public-card">
+      <div class="public-header">
+        <h3>WhatsApp / SMS alerts</h3>
+        <span class="alert-tag">Notify now</span>
+      </div>
+      <ul id="alert-list" class="alert-list"></ul>
+    </div>
+  </div>
+</section>
+
+<section class="s rv" id="ai" data-visible-roles="inspector,supervisor,admin"><div class="eyebrow" style="color:var(--gold)">AI drain inspector</div><h2>One photo. <em class="serif" style="color:var(--gold)">One verdict.</em></h2>
+<p class="sub">Scored by the DrainOps API when connected, otherwise in your browser. <span class="chip">Model status shown with each result</span></p>
+<div class="insp"><label class="drop"><input id="file" type="file" accept="image/*" capture="environment"><div id="pv"><div class="serif" style="font-size:2rem">Drop or capture a drain photo</div><small style="color:var(--mut)">Tap to choose an image</small></div></label>
+<div class="panel" id="res"><div class="serif" style="font-size:1.6rem;color:var(--mut)">Your blockage report will appear here.</div></div></div></section>
+
+<section class="s rv" id="governance">
+  <div class="eyebrow" style="color:var(--gold)">Governance and reporting</div>
+  <h2>Evidence for oversight, operations, and public accountability.</h2>
+  <p class="sub">Prototype governance workspace. Role selection only changes this browser UI; it is not authentication or authorization. Reports and audit entries are local demo records until backed by server APIs.</p>
+  <div class="gov-toolbar">
+    <div class="role-toolbar">
+      <label for="active-role">Demo view</label>
+      <select id="active-role"><option value="inspector">Inspector</option><option value="supervisor">Supervisor</option><option value="engineer">Engineer</option><option value="admin" selected>Admin</option></select>
+      <label for="actor-name">Signed-in name</label>
+      <input id="actor-name" value="Rakesh S." maxlength="60">
+    </div>
+    <div class="field"><label for="report-month">Monthly report</label><input id="report-month" type="month"></div>
+    <div class="field"><label for="report-ward">Ward / municipality</label><select id="report-ward"><option value="All">All wards</option></select></div>
+    <div class="gov-actions">
+      <button class="primary-btn" id="export-excel" type="button" data-visible-roles="supervisor,engineer,admin">Export Excel CSV</button>
+      <button class="sync-btn secondary" id="export-pdf" type="button" data-visible-roles="supervisor,engineer,admin">Print / Save PDF</button>
+    </div>
+  </div>
+  <div class="gov-grid">
+    <div class="gov-card" data-visible-roles="supervisor,admin">
+      <h3>Contractor performance</h3>
+      <div class="cross-benefit-kpis">
+        <div class="k"><b id="verified-cleanings">0</b><span>Verified cleanings</span></div>
+        <div class="k"><b id="mean-response">—</b><span>Median response time</span></div>
+        <div class="k"><b id="repeat-blockage">—</b><span>Repeat blockage rate</span></div>
+        <div class="k"><b id="contractor-count">0</b><span>Contractors reported</span></div>
+      </div>
+      <div class="gov-table-wrap"><table class="gov-table"><thead><tr><th>Contractor</th><th>Verified</th><th>Median response</th><th>Repeat blockage</th></tr></thead><tbody id="contractor-report-body"></tbody></table></div>
+      <p class="gov-note">No verified work-order completion records are connected yet. Values shown as sample metrics are illustrative only and must not be used for contractor evaluation.</p>
+    </div>
+    <div class="gov-card" data-visible-roles="engineer,admin">
+      <h3>Ward-wise monthly report</h3>
+      <div class="gov-table-wrap"><table class="gov-table"><thead><tr><th>Ward / municipality</th><th>Drains</th><th>Mean health</th><th>High risk</th><th>Verified cleanings</th></tr></thead><tbody id="ward-report-body"></tbody></table></div>
+      <p class="gov-note">Exports contain this summary plus individual drain rows for the selected period. Missing cleaning-history records are reported as 0, not inferred.</p>
+    </div>
+    <div class="gov-card" data-visible-roles="admin">
+      <h3>Audit log · score changes and overrides</h3>
+      <ul class="audit-list" id="audit-list"></ul>
+    </div>
+    <div class="gov-card" data-visible-roles="inspector,supervisor,admin">
+      <h3>Access and audit status</h3>
+      <span class="role-chip" id="role-status">Inspector view</span>
+      <p class="gov-note" id="role-description"></p>
+      <p class="gov-note">Production use requires server-enforced roles, authenticated actor identity, append-only audit storage, and approved monthly reporting data.</p>
+    </div>
+  </div>
+</section>
+
+<section class="s rv" id="how"><div class="eyebrow" style="color:var(--gold)">Method</div><h2>From dirty drain to <em class="serif" style="color:var(--gold)">dispatched crew.</em></h2>
+<div class="steps"><div class="st"><b>01</b><h3>See</h3><p>A phone photo is scored for blockage, debris and flow in seconds, even offline.</p></div><div class="st"><b>02</b><h3>Map</h3><p>Every segment lives in a GIS twin with health, dimensions and cleaning history.</p></div><div class="st"><b>03</b><h3>Predict</h3><p>Health meets the rainfall forecast to rank which drains fail first.</p></div><div class="st"><b>04</b><h3>Dispatch</h3><p>Crews clean 24–48 hours before the rain, with before/after proof.</p></div></div></section>
+
+<div class="fin"><q>The flood doesn't begin in the street. It begins in the drain nobody checked.</q><a class="btn b1" href="#dash">Start with the riskiest drain</a></div>
+<footer>DrainOps AI · pilot prototype · Panihati · Kamarhati · Barrackpore and beyond</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+let D=[["DR-EST-001","Barrackpore Station Approach Culvert","Barrackpore","West Bengal",22.76,88.37,32,2.5,1.8,"Severe Plastic & Silt Clot"],["DR-EST-002","Sodepur BT Road Crossing Canal","Panihati","West Bengal",22.698,88.388,82,4.0,2.5,"Clear Flow"],["DR-EST-003","Kamarhati Ward 5 Stormwater Channel","Kamarhati","West Bengal",22.671,88.375,44,1.8,1.2,"Construction Debris & Silt"],["DR-EST-004","Panihati Ferry Ghat Outlet","Panihati","West Bengal",22.692,88.368,20,3.0,2.0,"Choked Solid Waste & Hyacinth"],["DR-EST-005","Titagarh Jute Mill Bypass Channel","Titagarh","West Bengal",22.74,88.372,65,2.2,1.5,"Moderate Siltation"],["DR-EST-006","Belgharia Expressway Underpass Culvert","Kamarhati","West Bengal",22.656,88.391,88,3.5,2.2,"Clear Flow"],["DR-EST-007","Agarpara Station Road Feeder Drain","Panihati","West Bengal",22.684,88.382,28,1.5,1.0,"Plastic Wrappers & Bio-Waste"],["DR-EST-008","Khardah Station Bazar Outlet","Khardah","West Bengal",22.721,88.379,55,2.0,1.4,"Moderate Vegetable Waste"],["DR-EST-009","Madhyamgram Chowmatha Culvert","Madhyamgram","West Bengal",22.701,88.452,78,3.2,2.0,"Minimal Foliage"],["DR-EST-010","Dum Dum Cantonment East Channel","South Dum Dum","West Bengal",22.639,88.411,38,2.8,1.8,"Heavy Siltation"],["DR-EST-011","Barasat Champadali Crossing Drain","Barasat","West Bengal",22.723,88.481,24,3.0,2.1,"Choked Polybags & Thermocol"],["DR-EST-012","Jessore Road Airport Gate 1 Feeder","Dum Dum","West Bengal",22.652,88.438,72,2.4,1.6,"Minor Dust Sedimentation"],["DR-EST-013","Nagerbazar Flyover Foot Drain","South Dum Dum","West Bengal",22.622,88.406,30,1.6,1.1,"Severe Commercial Plastic Trash"],["DR-EST-014","Lake Town VIP Road Outfall Sluice","South Dum Dum","West Bengal",22.601,88.402,85,4.2,2.8,"Clear Flow"],["DR-EST-015","Ultadanga HUDCO Crossing Drain","Kolkata MC","West Bengal",22.593,88.396,41,3.0,2.0,"Accumulated Silt & Mud"],["DR-EST-016","Maniktala Canal Approach Grate","Kolkata MC","West Bengal",22.584,88.379,18,2.5,1.7,"Dense Solid Waste & Sludge"],["DR-EST-017","Shyambazar Five-Point Junction Drain","Kolkata MC","West Bengal",22.602,88.371,60,2.0,1.5,"Moderate Paper & Cups"],["DR-EST-018","Bagbazar Ghat River Outfall","Kolkata MC","West Bengal",22.603,88.362,76,3.8,2.3,"Clear Flow"],["DR-EST-019","Cossipore Gun Factory Perimeter Ditch","Kolkata MC","West Bengal",22.628,88.369,35,2.6,1.6,"Overgrown Weeds & Silt"],["DR-EST-020","Baranagar Tobin Road Box Drain","Baranagar","West Bengal",22.641,88.373,80,2.2,1.4,"Clear Flow"],["DR-EST-021","Dunlop Crossing Arterial Channel","Baranagar","West Bengal",22.653,88.371,22,3.6,2.2,"Choked Construction Rubble"],["DR-EST-022","Dakshineswar Temple Approach Feeder","Kamarhati","West Bengal",22.655,88.358,68,2.0,1.3,"Moderate Floral/Bio Waste"],["DR-EST-023","Bally Bridge Approach Culvert","Bally","West Bengal",22.651,88.349,50,3.2,2.0,"Moderate Sand & Gravel"],["DR-EST-024","Belur Math Station Road Drain","Bally","West Bengal",22.632,88.351,74,1.8,1.2,"Clear Flow"],["DR-EST-025","Liluah Railway Workshop Feeder","Howrah MC","West Bengal",22.614,88.345,27,2.8,1.9,"Industrial Sludge & Plastic"],["DR-EST-026","Salkia School Road Storm Drain","Howrah MC","West Bengal",22.604,88.348,33,1.5,1.1,"Severe Market Organic Garbage"],["DR-EST-027","Howrah Station South Bus Stand Grate","Howrah MC","West Bengal",22.585,88.342,15,3.0,2.0,"Critically Choked Cups & Packaging"],["DR-EST-028","Foreshore Road Industrial Outfall","Howrah MC","West Bengal",22.569,88.328,62,4.5,2.6,"Moderate Chemical Slurry Residue"],["DR-EST-029","Shibpur Mandirtala Crossing Channel","Howrah MC","West Bengal",22.561,88.322,86,2.4,1.7,"Clear Flow"],["DR-EST-030","Kona Expressway Entry Culvert","Howrah MC","West Bengal",22.578,88.291,48,3.8,2.4,"Silt Settlement from Highway Runoff"],["DR-EST-031","Serampore Battala Bazar Channel","Serampore","West Bengal",22.753,88.341,29,2.0,1.3,"Plastic Packaging & Rotten Waste"],["DR-EST-032","Rishra Railway Underpass Drain","Rishra","West Bengal",22.711,88.352,21,2.6,1.8,"Critically Flooded & Silted"],["DR-EST-033","Konnagar Station Feeder Drain","Konnagar","West Bengal",22.699,88.355,70,1.6,1.1,"Minor Leaf Litter"],["DR-EST-034","Uttarpara Kotrung Outfall Canal","Uttarpara","West Bengal",22.672,88.354,82,3.5,2.2,"Clear Flow"],["DR-EST-035","Sealdah Koley Market Main Sump","Kolkata MC","West Bengal",22.569,88.371,12,3.2,2.4,"Massive Vegetable Matter & Polythene"],["DR-EST-036","Park Circus 7-Point Culvert","Kolkata MC","West Bengal",22.543,88.368,39,3.0,2.1,"Siltation & Construction Dust"],["DR-EST-037","Tangra Canal Road Box Sluice","Kolkata MC","West Bengal",22.551,88.389,25,4.0,2.5,"Dense Tannery Sludge & Litter"],["DR-EST-038","Topsia EM Bypass Confluence","Kolkata MC","West Bengal",22.534,88.397,75,4.2,2.6,"Clear Flow"],["DR-EST-039","Gariahat Flyover Runoff Grates","Kolkata MC","West Bengal",22.519,88.365,34,1.8,1.2,"Stall Wrapping Plastic & Paper"],["DR-EST-040","Kalighat Temple Canal Outfall","Kolkata MC","West Bengal",22.518,88.344,23,2.8,1.8,"Severe Floral Offerings & Debris"],["DR-EST-041","Behala Chowrasta Diamond Harbour Rd","Kolkata MC","West Bengal",22.492,88.318,19,3.4,2.2,"Metro Construction Silt Clot"],["DR-EST-042","Taratala Industrial Area Feeder","Kolkata MC","West Bengal",22.512,88.309,58,2.5,1.6,"Moderate Silt & Packaging Waste"],["DR-EST-043","Jadavpur 8B Bus Stand Channel","Kolkata MC","West Bengal",22.498,88.369,71,2.2,1.5,"Clear Flow"],["DR-EST-044","Tollygunge Karunamoyee Culvert","Kolkata MC","West Bengal",22.491,88.349,31,2.6,1.7,"Foliage & Unchecked Plastic Silt"],["DR-EST-045","Garia Mahamayatala Feeder Drain","Rajpur-Sonarpur","West Bengal",22.464,88.391,46,2.0,1.4,"Moderate Silt from Residential Zone"],["DR-EST-046","Sonarpur Station Bazar Sluice","Rajpur-Sonarpur","West Bengal",22.439,88.428,26,2.5,1.6,"Heavily Choked Vegetable Waste"],["DR-EST-047","New Town Action Area 1 Box Canal","NKDA","West Bengal",22.589,88.461,92,5.0,3.0,"Clear Flow"],["DR-EST-048","New Town Chinar Park Road Culvert","Bidhannagar MC","West Bengal",22.628,88.449,42,3.0,2.0,"Construction Sand Runoff"],["DR-EST-049","Salt Lake Sector V Karunamoyee Outlet","Bidhannagar MC","West Bengal",22.581,88.423,85,3.5,2.2,"Clear Flow"],["DR-EST-050","Salt Lake Duttabad Slum Periphery Drain","Bidhannagar MC","West Bengal",22.57,88.406,22,2.0,1.3,"Severe Unsorted Domestic Garbage"],["DR-EST-051","Budge Budge Trunk Road Channel","Budge Budge","West Bengal",22.482,88.181,36,2.4,1.5,"Heavy Industrial Dust Silt"],["DR-EST-052","Maheshtala Akra Station Feeder","Maheshtala","West Bengal",22.508,88.261,25,2.1,1.3,"Garment Fabric Scraps & Silt"],["DR-EST-053","Baruipur Hospital Road Culvert","Baruipur","West Bengal",22.365,88.432,70,2.2,1.4,"Minor Medical Packaging Plastic"],["DR-EST-054","Habra Supermarket Approach Drain","Habra","West Bengal",22.842,88.631,29,2.0,1.2,"Plastic Crates & Rotten Veg"],["DR-EST-055","Ashoknagar Building More Culvert","Ashoknagar Kalyangarh","West Bengal",22.831,88.621,74,2.5,1.6,"Clear Flow"],["DR-EST-056","Bhatpara Ward 12 Ghoshpara Drain","Bhatpara","West Bengal",22.868,88.408,31,2.3,1.5,"Jute Mill Effluent & Silt"],["DR-EST-057","Naihati Ferry Approach Canal","Naihati","West Bengal",22.891,88.419,64,3.0,2.0,"Riverbank Silt Accumulation"],["DR-EST-058","Kanchrapara Workshop Gate Drain","Kanchrapara","West Bengal",22.939,88.431,79,2.4,1.6,"Clear Flow"],["DR-EST-059","Halisahar Ramprasad Ghat Feeder","Halisahar","West Bengal",22.949,88.418,43,1.8,1.2,"Organic Sedimentation"],["DR-EST-060","Kalyani Industrial Area Main Box Drain","Kalyani","West Bengal",22.975,88.435,88,4.0,2.5,"Clear Flow"],["DR-EST-061","Chinsurah Clock Tower Drainage Box","Hooghly-Chinsurah","West Bengal",22.902,88.396,37,2.2,1.4,"Plastic Pouches & Leaf Choke"],["DR-EST-062","Bandel Junction Approach Culvert","Hooghly-Chinsurah","West Bengal",22.919,88.378,22,2.8,1.8,"Heavy Station Debris & Mud"],["DR-EST-063","Chandannagar Strand Road Outfall","Chandannagar MC","West Bengal",22.868,88.371,81,3.2,2.0,"Clear Flow"],["DR-EST-064","Bhadreswar Telinipara Mill Drain","Bhadreswar","West Bengal",22.825,88.358,30,2.0,1.3,"Choked Jute Dust & Plastics"],["DR-EST-065","Champdani G.T. Road Culvert","Champdani","West Bengal",22.802,88.352,67,2.5,1.6,"Moderate Silt"],["DR-EST-066","Burdwan Curzon Gate Main Sump","Burdwan","West Bengal",23.239,87.862,24,3.0,2.1,"Commercial Waste & Slag"],["DR-EST-067","Durgapur Benachity Market Drain","Durgapur MC","West Bengal",23.551,87.291,33,2.2,1.5,"Thermocol & Food Packaging"],["DR-EST-068","Durgapur City Centre Underpass Culvert","Durgapur MC","West Bengal",23.538,87.319,86,3.6,2.2,"Clear Flow"],["DR-EST-069","Asansol Hutton Road Commercial Feeder","Asansol MC","West Bengal",23.684,86.982,27,2.4,1.7,"Heavy Market Plastic & Silt"],["DR-EST-070","Asansol Burnpur Road Outfall","Asansol MC","West Bengal",23.662,86.941,73,3.8,2.4,"Minor Slag Sedimentation"],["DR-EST-071","Raniganj Bazar Road Box Drain","Asansol MC","West Bengal",23.619,87.119,35,2.0,1.4,"Coal Dust & Domestic Sludge"],["DR-EST-072","Kharagpur Railway Settlement Drain","Kharagpur","West Bengal",22.339,87.321,49,2.6,1.8,"Foliage & Railway Scrap Litter"],["DR-EST-073","Medinipur Keranitola Feeder","Medinipur","West Bengal",22.429,87.329,63,1.9,1.2,"Moderate Silt"],["DR-EST-074","Siliguri Hill Cart Road Main Grate","Siliguri MC","West Bengal",26.719,88.428,21,3.0,2.0,"Hill Runoff Silt & Tea Cup Clot"],["DR-EST-075","Siliguri Mahananda River Sluice","Siliguri MC","West Bengal",26.709,88.411,79,4.5,2.8,"Clear Flow"],["DR-EST-076","Jalpaiguri Dinbazar Outlet Canal","Jalpaiguri","West Bengal",26.529,88.721,28,2.8,1.9,"Choked Bamboo & Vegetation"],["DR-EST-077","Cooch Behar Sagardighi Periphery Drain","Cooch Behar","West Bengal",26.321,89.442,76,2.0,1.3,"Clear Flow"],["DR-EST-078","Malda English Bazar Rathbari Drain","English Bazar","West Bengal",25.002,88.141,32,2.4,1.6,"Severe Plastic & Organic Silt"],["DR-EST-079","Berhampore Mohan Cinema Crossing Drain","Berhampore","West Bengal",24.098,88.251,40,2.2,1.5,"Sedimented Road Dust & Mud"],["DR-EST-080","Krishnanagar Post Office More Culvert","Krishnanagar","West Bengal",23.402,88.501,71,2.0,1.4,"Clear Flow"],["DR-EST-081","Patna Junction Station Approach Grate","Patna MC","Bihar",25.602,85.132,14,3.2,2.2,"Massive Polythene & Beverage Plastic"],["DR-EST-082","Patna Boring Road Chauraha Drain","Patna MC","Bihar",25.618,85.119,38,2.5,1.7,"Commercial Debris & Mud"],["DR-EST-083","Patna Kankarbagh Main Storm Sump","Patna MC","Bihar",25.592,85.158,18,4.0,2.8,"Critically Silted Lowland Channel"],["DR-EST-084","Patna Gandhi Maidan West Sluice","Patna MC","Bihar",25.621,85.148,80,3.5,2.0,"Clear Flow"],["DR-EST-085","Patna Bailey Road Flyover Culvert","Patna MC","Bihar",25.611,85.089,69,3.0,2.0,"Minor Construction Sand"],["DR-EST-086","Gaya GB Road Commercial Channel","Gaya MC","Bihar",24.795,85.001,26,2.2,1.5,"Severe Pilgrim Offerings & Plastic"],["DR-EST-087","Gaya Falgu River Outfall Drain","Gaya MC","Bihar",24.781,85.018,42,3.8,2.2,"Heavy Riverbank Siltation"],["DR-EST-088","Bhagalpur Station Road Feeder","Bhagalpur MC","Bihar",25.241,87.008,29,2.4,1.6,"Plastic Spools & Textile Debris"],["DR-EST-089","Bhagalpur Adampur Ghat Sluice","Bhagalpur MC","Bihar",25.258,87.019,75,3.4,2.1,"Clear Flow"],["DR-EST-090","Muzaffarpur Motijheel Market Drain","Muzaffarpur MC","Bihar",26.121,85.389,16,2.0,1.4,"Choked Waste Cloth & Plastic Bags"],["DR-EST-091","Muzaffarpur Saraiya Ganj Culvert","Muzaffarpur MC","Bihar",26.131,85.399,48,2.8,1.8,"Organic Market Waste"],["DR-EST-092","Darbhanga Tower Chowk Drainage Box","Darbhanga MC","Bihar",26.151,85.898,34,2.5,1.7,"Accumulated Silt & Polythene"],["DR-EST-093","Ranchi Main Road Overbridge Drain","Ranchi MC","Jharkhand",23.361,85.328,25,2.6,1.8,"Severe Plastic Packaging & Sand"],["DR-EST-094","Ranchi Harmu Bypass Storm Canal","Ranchi MC","Jharkhand",23.351,85.309,45,4.0,2.5,"Urban Sludge & Domestic Silt"],["DR-EST-095","Ranchi Kanke Road Drainage Channel","Ranchi MC","Jharkhand",23.401,85.318,84,2.8,1.9,"Clear Flow"],["DR-EST-096","Jamshedpur Sakchi Market Arterial Drain","JNAC","Jharkhand",22.808,86.201,22,2.8,1.9,"Dense Plastic Wrap & Commercial Clog"],["DR-EST-097","Jamshedpur Bistupur Main Road Culvert","JNAC","Jharkhand",22.789,86.188,88,3.2,2.1,"Clear Flow"],["DR-EST-098","Jamshedpur Subernarekha Outfall Sluice","MNAC","Jharkhand",22.819,86.219,71,4.2,2.7,"Minor River Silt"],["DR-EST-099","Dhanbad Bank More Commercial Sump","Dhanbad MC","Jharkhand",23.789,86.421,19,2.5,1.8,"Coal Slurry & Plastic Obstruction"],["DR-EST-100","Bokaro Steel City Sector 4 Feeder","BSL / Bokaro","Jharkhand",23.669,86.149,91,3.0,2.0,"Clear Flow"],["DR-EST-101","Deoghar Tower Chowk Temple Drainage Box","Deoghar MC","Jharkhand",24.489,86.698,28,2.2,1.5,"Heavy Ritual Flower Waste & Polythene"]].map(r=>({c:r[0],n:r[1],m:r[2],s:r[3],la:r[4],lo:r[5],h:r[6],w:r[7],d:r[8],t:r[9]}));
+const API=window.DRAINOPS_API||"";   // "" = same origin; set window.DRAINOPS_API before this script for a separate API host
+const $=s=>document.querySelector(s),COL={crit:'#e2574c',warn:'#e9a23b',ok:'#38b583'};
+const lvl=v=>v>=65?'crit':v>=35?'warn':'ok';
+let rain=18,st='All',ov={},sel=null,pts=[],base=0,wardFilter='All',severityFilter='All',cleanedFilter='All',debrisFilter='All',timeIndex=5;
+let currentInspection=null;
+const digitalTwinWeeks=[{label:'Week 1',offset:-12},{label:'Week 2',offset:-10},{label:'Week 3',offset:-8},{label:'Week 4',offset:-6},{label:'Week 5',offset:-3},{label:'Week 6',offset:0},{label:'Week 7',offset:4},{label:'Week 8',offset:7},{label:'Week 9',offset:10},{label:'Week 10',offset:12}];
+const getDebrisType=t=>{const s=(t||'').toLowerCase(); if(/plastic|poly|packaging|wrapping|thermo|rubble/.test(s)) return 'Plastic'; if(/silt|mud|dust|slurry|sediment|sand/.test(s)) return 'Silt'; if(/organic|vegetable|floral|bio|waste|garbage|jute|effluent/.test(s)) return 'Organic'; return 'Mixed';};
+const normalizeSeverity=score=>score>=75?'Critical':score>=45?'Warning':'Healthy';
+const risk=(h,wd,dp,forecast)=>Math.max(5,Math.min(99,Math.round((100-h)*0.68 + (forecast/14)*18 + (wd*dp>0?Math.min(22,wd*dp*2.6):0))));
+const registryRows=()=>D.map(x=>Array.isArray(x)?x:[x.c,x.n,x.m,x.s,x.la,x.lo,x.h,x.w,x.d,x.t]);
+const rows=u=>registryRows().filter(x=>{
+  const [,,city,,,,, , ,cond]=x;
+  const health = u && ov[x[0]] != null ? ov[x[0]] : x[6];
+  const score = risk(health, x[7], x[8], rain);
+  const severity = normalizeSeverity(score);
+  const debris = getDebrisType(cond);
+  const cleanedDays = 30 + ((x[0].charCodeAt(x[0].length - 1) + x[0].length) % 180);
+  if (st !== 'All' && x[3] !== st) return false;
+  if (wardFilter !== 'All' && city !== wardFilter) return false;
+  if (severityFilter !== 'All' && severity !== severityFilter) return false;
+  if (cleanedFilter !== 'All' && !(cleanedDays <= Number(cleanedFilter))) return false;
+  if (debrisFilter !== 'All' && debris !== debrisFilter) return false;
+  return true;
+}).map(x=>{
+  const health = u && ov[x[0]] != null ? ov[x[0]] : x[6];
+  const r = risk(health, x[7], x[8], rain);
+  const severity = normalizeSeverity(r);
+  const debris = getDebrisType(x[9]);
+  const cleanedDays = 30 + ((x[0].charCodeAt(x[0].length - 1) + x[0].length) % 180);
+  const organicWaste = /organic|vegetable|floral|bio|garbage|food|jute/i.test(x[9]);
+  const plasticWaste = /plastic|poly|packaging|wrapping|thermo/i.test(x[9]);
+  const blockage = (100 - health) / 100;
+  const rainExposure = Math.min(rain / 100, 1);
+  const mosquitoRisk = Math.round(100 * (0.55 * (blockage * 0.65 + rainExposure * 0.35) + 0.45 * Number(organicWaste)));
+  const plasticShare = plasticWaste
+    ? Math.min(95, 60 + Math.round(blockage * 20) + (/(plastic|poly)/i.test(x[9]) ? 10 : 0))
+    : Math.max(5, Math.round((organicWaste ? 10 : 22) + blockage * 18));
+  return {x:{c:x[0],n:x[1],m:x[2],s:x[3],la:x[4],lo:x[5],w:x[7],d:x[8],t:x[9],ward:x[2],debris,cleanedDays},h:health,r,severity,debris,cleanedDays,mosquitoRisk,plasticShare};
+}).sort((a,b)=>b.r-a.r);
+function populateWardFilters(){
+  const wardSelect = $('#ward-filter');
+  if (!wardSelect) return;
+  const wards = ['All', ...new Set(registryRows().map(x => x[2]).filter(Boolean))].sort();
+  wardSelect.innerHTML = wards.map(w => `<option value="${w}">${w === 'All' ? 'All' : w}</option>`).join('');
+  wardSelect.value = wardFilter;
+}
+function update(){const R=rows(true),cnt=k=>R.filter(o=>lvl(o.r)===k).length;
+$('#kc').textContent=cnt('crit');$('#kw').textContent=cnt('warn');$('#kn').textContent=R.length;
+$('#kh').textContent=R.length?Math.round(R.reduce((a,o)=>a+o.h,0)/R.length):0;$('#rv').textContent=rain+' mm';
+$('#mosquito-risk-count').textContent=R.filter(o=>o.mosquitoRisk>=55).length;
+$('#plastic-hotspot-count').textContent=R.filter(o=>o.plasticShare>=60).length;
+$('#time-label').textContent=digitalTwinWeeks[timeIndex].label;
+const b=rows(false).filter(o=>lvl(o.r)==='crit').length;$('#wi').textContent=Object.keys(ov).length?`Critical drains: ${b} → ${cnt('crit')}`:'';
+$('#list').innerHTML=R.slice(0,12).map((o,i)=>`<li data-c="${o.x.c}" class="${sel===o.x.c?'on':''}"><b>${i+1}</b><span><em>${o.x.n}</em><small>${o.x.m} · ${o.x.s}</small><i style="width:${o.r}%;background:${COL[lvl(o.r)]}"></i></span><strong style="color:${COL[lvl(o.r)]}">${o.r.toFixed(0)}</strong></li>`).join('');
+pts=R;const o=R.find(o=>o.x.c===sel)||R[0];if(!o)return;const x=o.x;
+const f=[['Blockage',(100-o.h)*.8],['Rain',Math.min(rain/50,1)*32],['Size',(1-Math.min(x.w*x.d/10,1))*5]];
+$('#det').innerHTML=`<h4>${x.n}</h4><p>${x.m}, ${x.s} · ${x.w}×${x.d} m · health ${o.h}</p><p class="cond">“${x.t}”</p><div class="big" style="color:${COL[lvl(o.r)]}">${o.r.toFixed(0)}<small>/100 risk</small></div>`+f.map(([k,v])=>`<div class="fb"><span>${k}</span><i><b style="width:${v/.8}%"></b></i><em>${v.toFixed(0)}</em></div>`).join('');
+if(window.L && document.getElementById('map')){const mapEl=document.getElementById('map');if(!mapEl._drainopsMap){mapEl._drainopsMap=L.map(mapEl,{zoomControl:true,scrollWheelZoom:true}).setView([22.7,88.41],10);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap contributors'}).addTo(mapEl._drainopsMap);mapEl._drainopsLayer=L.layerGroup().addTo(mapEl._drainopsMap);mapEl._drainopsWard=L.layerGroup().addTo(mapEl._drainopsMap);mapEl._drainopsFlood=L.layerGroup().addTo(mapEl._drainopsMap);mapEl._drainopsNetwork=L.layerGroup().addTo(mapEl._drainopsMap);mapEl._drainopsMosquito=L.layerGroup();mapEl._drainopsPlastic=L.layerGroup();mapEl._drainopsMap.on('dragstart',()=>{mapEl._drainopsMap._userMoved=true});}
+const map=mapEl._drainopsMap, layer=mapEl._drainopsLayer, wardLayer=mapEl._drainopsWard, floodLayer=mapEl._drainopsFlood, netLayer=mapEl._drainopsNetwork, mosquitoLayer=mapEl._drainopsMosquito, plasticLayer=mapEl._drainopsPlastic;layer.clearLayers();wardLayer.clearLayers();floodLayer.clearLayers();netLayer.clearLayers();mosquitoLayer.clearLayers();plasticLayer.clearLayers();const draws=R.slice(0,18);draws.forEach(({x,r,mosquitoRisk,plasticShare})=>{const color=COL[lvl(r)];const marker=L.circleMarker([x.la,x.lo],{radius:5+r/16,color,fillColor:color,fillOpacity:.82,weight:1.5}).bindPopup(`<div style="min-width:170px"><strong>${x.c}</strong><br>${x.n}<br><small>${x.m}, ${x.s}</small><br>Risk ${r.toFixed(0)}/100<br>Estimated mosquito flag ${mosquitoRisk}/100<br>Estimated plastic share ${plasticShare}%</div>`);marker.addTo(layer); if(sel===x.c){marker.openPopup();}
+if(mosquitoRisk>=55){L.circleMarker([x.la,x.lo],{radius:8+mosquitoRisk/12,color:'#b886f5',fillColor:'#b886f5',fillOpacity:.32,weight:2}).bindTooltip(`Potential mosquito-breeding risk · estimated ${mosquitoRisk}/100`).addTo(mosquitoLayer);}
+if(plasticShare>=60){L.circleMarker([x.la,x.lo],{radius:7+plasticShare/14,color:'#f28b5b',fillColor:'#f28b5b',fillOpacity:.3,weight:2}).bindTooltip(`Plastic-dominant drain · estimated ${plasticShare}%`).addTo(plasticLayer);}
+});
+if (draws.length > 1) {
+  for (let i = 0; i < Math.min(draws.length - 1, 8); i += 1) {
+    const a = draws[i], b = draws[i + 1];
+    L.polyline([[a.x.la,a.x.lo],[b.x.la,b.x.lo]],{color:'#8ec5ff',opacity:.55,weight:1.5}).addTo(netLayer);
+  }
+}
+const wardPolygons=[[[22.76,88.19],[22.76,88.55],[22.52,88.55],[22.52,88.19]],[[22.46,88.29],[22.46,88.52],[22.28,88.52],[22.28,88.29]],[[22.84,88.25],[22.84,88.75],[22.62,88.75],[22.62,88.25]]];
+wardPolygons.forEach((poly)=>L.polygon(poly,{color:'#d7b267',weight:1,fillColor:'#d7b267',fillOpacity:.08}).addTo(wardLayer));
+const lowPoints=draws.filter(o=>o.h<=45||o.r>65).slice(0,10); lowPoints.forEach(o=>L.circle([o.x.la,o.x.lo],{radius:800,color:'#6fd3ff',fillColor:'#6fd3ff',fillOpacity:.12,weight:1}).addTo(floodLayer));
+const heatPoints=draws.slice(0,12).map(o=>({lat:o.x.la,lon:o.x.lo,weight:o.r/100}));
+heatPoints.forEach(p=>L.circleMarker([p.lat,p.lon],{radius:15+p.weight*18,color:'#ff8a5b',fillColor:'#ff8a5b',fillOpacity:.18}).addTo(floodLayer));
+document.querySelectorAll('.map-layer-toggle').forEach(button=>{const active=button.getAttribute('aria-pressed')==='true';const target=button.dataset.mapLayer==='mosquito'?mosquitoLayer:plasticLayer;if(active){target.addTo(map);}else{map.removeLayer(target);}});
+if(draws.length&&!map._userMoved){const bounds=L.latLngBounds(draws.map(o=>[o.x.la,o.x.lo]));map.fitBounds(bounds.pad(.45));}}}
+$('#rain-in').oninput=e=>{rain=+e.target.value;update()};$('#st').onchange=e=>{st=e.target.value;update()};$('#ward-filter').onchange=e=>{wardFilter=e.target.value;update()};$('#severity-filter').onchange=e=>{severityFilter=e.target.value;update()};$('#cleaned-filter').onchange=e=>{cleanedFilter=e.target.value;update()};$('#debris-filter').onchange=e=>{debrisFilter=e.target.value;update()};$('#time-slice').oninput=e=>{timeIndex=Number(e.target.value); update()};
+$('#wb').onclick=()=>{if(Object.keys(ov).length){ov={}}else rows(false).slice(0,10).forEach(o=>ov[o.x.c]=90);update()};
+$('#list').onclick=e=>{const l=e.target.closest('li');if(l){sel=l.dataset.c;update()}};
+document.querySelectorAll('.map-layer-toggle').forEach(button=>button.addEventListener('click',()=>{const active=button.getAttribute('aria-pressed')!=='true';button.setAttribute('aria-pressed',String(active));const label=button.dataset.mapLayer==='mosquito'?'Mosquito-risk layer':'Plastic hotspots';button.textContent=`${label} · ${active?'on':'off'}`;update();}));
+const cv=$('#map');let W,H;let liveMap=null,liveLayer=null;
+if(cv&&cv.tagName==='CANVAS'){const cx=cv.getContext('2d');
+function size(){const r=cv.getBoundingClientRect(),p=devicePixelRatio||1;W=r.width;H=r.height;cv.width=W*p;cv.height=H*p;cx.setTransform(p,0,0,p,0,0)}
+const P=x=>[40+(x.lo-84.8)/4.8*(W-80),H-34-(x.la-22.2)/4.7*(H-68)];
+function draw(t){cx.clearRect(0,0,W,H);cx.strokeStyle='rgba(216,176,98,.09)';cx.lineWidth=1;
+for(let i=0;i<=8;i++){cx.beginPath();cx.moveTo(40+i*(W-80)/8,0);cx.lineTo(40+i*(W-80)/8,H);cx.moveTo(0,34+i*(H-68)/8);cx.lineTo(W,34+i*(H-68)/8);cx.stroke()}
+pts.forEach(o=>{const[px,py]=P(o.x),k=lvl(o.r),c=COL[k],rd=3+o.r/16;
+if(k==='crit'){const p=(t/1100+o.x.la*40)%1;cx.beginPath();cx.arc(px,py,rd+p*18,0,7);cx.strokeStyle=c;cx.globalAlpha=.55*(1-p);cx.stroke();cx.globalAlpha=1}
+cx.beginPath();cx.arc(px,py,rd,0,7);cx.fillStyle=c;cx.shadowColor=c;cx.shadowBlur=14;cx.fill();cx.shadowBlur=0;
+if(o.x.c===(sel||(pts[0]&&pts[0].x.c))){cx.strokeStyle='#fff';cx.lineWidth=2;cx.beginPath();cx.arc(px,py,rd+5,0,7);cx.stroke()}});
+requestAnimationFrame(draw)}
+cv.onclick=e=>{const r=cv.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;let b=null,bd=22;
+pts.forEach(o=>{const[px,py]=P(o.x),d=Math.hypot(px-mx,py-my);if(d<bd){bd=d;b=o}});if(b){sel=b.x.c;update()}};
+}
+const rc=$('#rain'),rx=rc.getContext('2d');let dr=[];
+function rs(){rc.width=rc.clientWidth;rc.height=rc.clientHeight;dr=Array.from({length:Math.min(240,rc.width/5)},()=>({x:Math.random()*rc.width,y:Math.random()*rc.height,l:10+Math.random()*18,v:6+Math.random()*9}))}
+function rr(){rx.clearRect(0,0,rc.width,rc.height);rx.strokeStyle='rgba(190,215,255,.33)';rx.beginPath();
+dr.forEach(d=>{rx.moveTo(d.x,d.y);rx.lineTo(d.x-d.l*.2,d.y+d.l);d.y+=d.v;d.x-=d.v*.2;if(d.y>rc.height){d.y=-20;d.x=Math.random()*rc.width+40}});rx.stroke();requestAnimationFrame(rr)}
+(function(){let s='',z=7;const r=()=>(z=z*16807%2147483647)/2147483647;
+[['#101a2b',.55],['#080d17',.85]].forEach(([f,k],L)=>{let x=0;while(x<1200){const w=30+r()*50,h=40+r()*k*170;s+=`<rect x="${x}" y="${300-h}" width="${w}" height="${h}" fill="${f}"/>`;
+if(L)for(let i=0;i<h/18;i++)if(r()>.62)s+=`<rect x="${x+6+r()*(w-16)}" y="${300-h+8+i*16}" width="4" height="6" fill="#f3c46b" opacity=".8"/>`;x+=w+2}});$('#sky').innerHTML=s})();
+const Q=["Don't wait for the flood. Forecast it.","A city is only as resilient as its smallest drain.","Every monsoon reveals what we neglected.","Clean drains: the quietest infrastructure there is."];let qi=0;
+const q=$('#q');q.textContent=Q[0];setInterval(()=>{q.style.opacity=0;setTimeout(()=>{qi=(qi+1)%Q.length;q.textContent=Q[qi];q.style.opacity=1},600)},5000);
+const translations={
+  en:{drainId:'Drain ID / QR',inspectorName:'Inspector',photoPair:'Before / after photo pair',beforeLabel:'Before photo',afterLabel:'After photo',depthStick:'Depth-stick reading',coverType:'Cover type',notes:'Field notes',qualityCheck:'Photo quality check',scoreImprovement:'Score improvement',queue:'Sync queue',queued:'Queued',synced:'Synced'},
+  hi:{drainId:'नाली आईडी / QR',inspectorName:'निरीक्षक',photoPair:'पहले / बाद की फोटो',beforeLabel:'पहले की फोटो',afterLabel:'बाद की फोटो',depthStick:'गहराई पेंच पढ़ना',coverType:'कवर प्रकार',notes:'फील्ड नोट्स',qualityCheck:'फोटो गुणवत्ता जांच',scoreImprovement:'स्कोर सुधार',queue:'सिंक कतार',queued:'पंक्तिबद्ध',synced:'सिंक हुआ'},
+  bn:{drainId:'ড্রেন আইডি / QR',inspectorName:'পরিদর্শক',photoPair:'আগের / পরে ছবি',beforeLabel:'আগের ছবি',afterLabel:'পরের ছবি',depthStick:'ডেপথ-স্টিক রিডিং',coverType:'কভার টাইপ',notes:'ফিল্ড নোট',qualityCheck:'ফটো কোয়ালিটি চেক',scoreImprovement:'স্কোর উন্নতি',queue:'সিঙ্ক সারি',queued:'কিউতে',synced:'সিঙ্ক হয়েছে'}
+};
+function setLanguage(lang){document.querySelectorAll('[data-i18n]').forEach(el=>{const key=el.dataset.i18n;el.textContent=translations[lang]?.[key]||translations.en[key];}); document.querySelectorAll('.lang-switch button').forEach(btn=>btn.classList.toggle('active',btn.dataset.lang===lang));}
+document.querySelectorAll('.lang-switch button').forEach(btn=>btn.addEventListener('click',()=>setLanguage(btn.dataset.lang)));
+function openInspectionDB(){return new Promise(resolve=>{if(!('indexedDB' in window)){resolve(null); return;} const req=indexedDB.open('drainops-offline',1); req.onupgradeneeded=()=>{const db=req.result; if(!db.objectStoreNames.contains('queue')) db.createObjectStore('queue',{keyPath:'id'});}; req.onsuccess=()=>resolve(req.result); req.onerror=()=>resolve(null);});}
+async function readQueue(){const db=await openInspectionDB(); if(db){return new Promise(resolve=>{const tx=db.transaction('queue','readonly'); const store=tx.objectStore('queue'); const req=store.getAll(); req.onsuccess=()=>resolve(req.result||[]); req.onerror=()=>resolve([]);});} try{return JSON.parse(localStorage.getItem('drainops-queue')||'[]');}catch{return []}}
+async function writeQueue(items){const db=await openInspectionDB(); if(db){return new Promise(resolve=>{const tx=db.transaction('queue','readwrite'); const store=tx.objectStore('queue'); items.forEach(item=>store.put(item)); tx.oncomplete=()=>{renderQueue(); resolve();}; tx.onerror=()=>{localStorage.setItem('drainops-queue', JSON.stringify(items)); renderQueue(); resolve();};});} localStorage.setItem('drainops-queue', JSON.stringify(items)); renderQueue();}
+async function renderQueue(){const items=await readQueue();const queued=items.filter(i=>i.status!=='synced').length; document.getElementById('queue-count').textContent=String(queued); document.getElementById('queue-progress').style.width=`${Math.min(100,(queued/4)*100)}%`; const list=document.getElementById('queue-list'); list.innerHTML=items.length?items.slice(0,3).map(item=>`<li><div class="queue-meta"><strong>${item.id}</strong><small>${item.note||'Inspection ready'}</small></div><span class="small-tag">${item.status==='synced'?'Synced':'Queued'}</span></li>`).join(''):'<li><div class="queue-meta"><small>No inspections or corrections waiting to sync.</small></div></li>';}
+async function queueInspection(){const item={id:document.getElementById('drain-id').value||'DR-EST-NEW', status:'queued', note:'Checklist + photo pair saved offline'}; const items=await readQueue(); items.unshift(item); await writeQueue(items);}
+async function syncQueue(){const items=await readQueue(); const synced=items.map(item=>item.type==='training-feedback'?item:{...item,status:'synced'}); await writeQueue(synced);} 
+function makeTrainingImage(file){return new Promise((resolve,reject)=>{const image=new Image(),url=URL.createObjectURL(file);image.onload=()=>{try{const scale=Math.min(1,640/Math.max(image.naturalWidth,image.naturalHeight));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));const context=canvas.getContext('2d');if(!context)throw new Error('Image processing is unavailable');context.drawImage(image,0,0,canvas.width,canvas.height);resolve(canvas.toDataURL('image/jpeg',0.72));}catch(error){reject(error);}finally{URL.revokeObjectURL(url);}};image.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Unable to prepare the inspection photo'));};image.src=url;});}
+const roleCapabilities={
+  inspector:'Field inspections and score corrections',
+  supervisor:'Operations dashboard, inspections, contractor oversight, and report exports',
+  engineer:'Risk dashboard and ward report exports',
+  admin:'All prototype views, reports, and audit log'
+};
+const contractorSamples=[
+  {name:'North Zone Drain Services · sample',cleanings:18,response:'4.2 h',repeat:'16%'},
+  {name:'Riverbank Civic Works · sample',cleanings:14,response:'5.1 h',repeat:'21%'},
+  {name:'Central Desilting Team · sample',cleanings:22,response:'3.6 h',repeat:'12%'}
+];
+function readAuditLog(){try{const parsed=JSON.parse(localStorage.getItem('drainops-audit-log')||'[]');return Array.isArray(parsed)?parsed:[];}catch(error){console.error('Could not read local audit log',error);return [];}}
+function recordAudit(entry){
+  const audit=[entry,...readAuditLog()].slice(0,200);
+  try{localStorage.setItem('drainops-audit-log',JSON.stringify(audit));renderAuditLog();return true;}
+  catch(error){console.error('Could not persist audit entry',error);const status=document.getElementById('correction-status');if(status)status.textContent='Correction is queued, but the audit record could not be stored in this browser. Do not treat this as an audited change.';return false;}
+}
+function renderAuditLog(){
+  const list=document.getElementById('audit-list');
+  if(!list)return;
+  const entries=readAuditLog();
+  list.innerHTML=entries.length?entries.map(entry=>`<li><strong>${escapeHtml(entry.action)}</strong><small>${escapeHtml(entry.actor)} · ${escapeHtml(entry.role)} · ${escapeHtml(new Date(entry.timestamp).toLocaleString())}</small><small>${escapeHtml(entry.target)}: ${escapeHtml(entry.change)}</small></li>`).join(''):'<li class="gov-note">No score changes or overrides recorded in this browser.</li>';
+}
+function renderContractorReport(){
+  document.getElementById('verified-cleanings').textContent='0';
+  document.getElementById('mean-response').textContent='—';
+  document.getElementById('repeat-blockage').textContent='—';
+  document.getElementById('contractor-count').textContent=String(contractorSamples.length);
+  document.getElementById('contractor-report-body').innerHTML=contractorSamples.map(row=>`<tr><td>${row.name}</td><td>${row.cleanings}</td><td>${row.response}</td><td>${row.repeat}</td></tr>`).join('');
+}
+function reportRows(){
+  const selectedWard=document.getElementById('report-ward').value;
+  const month=document.getElementById('report-month').value;
+  const snapshot=registryRows().filter(row=>selectedWard==='All'||row[2]===selectedWard).map(row=>({
+    ward:row[2],drainId:row[0],drainName:row[1],health:Number(row[6])||0,risk:risk(Number(row[6])||0,Number(row[7])||1,Number(row[8])||1,rain),verifiedCleanings:0,reportingMonth:month
+  }));
+  const groups=new Map();
+  snapshot.forEach(row=>{if(!groups.has(row.ward))groups.set(row.ward,[]);groups.get(row.ward).push(row);});
+  return [...groups.entries()].map(([ward,records])=>({
+    ward,drains:records.length,meanHealth:Math.round(records.reduce((sum,row)=>sum+row.health,0)/records.length),
+    highRisk:records.filter(row=>row.risk>=65).length,verifiedCleanings:0,records
+  }));
+}
+function renderWardReport(){
+  const rows=reportRows();
+  document.getElementById('ward-report-body').innerHTML=rows.length?rows.map(row=>`<tr><td>${escapeHtml(row.ward)}</td><td>${row.drains}</td><td>${row.meanHealth}/100</td><td>${row.highRisk}</td><td>${row.verifiedCleanings}</td></tr>`).join(''):'<tr><td colspan="5">No drain records for this selection.</td></tr>';
+}
+function csvCell(value){
+  let safe=String(value??'');
+  if(/^[\s]*[=+\-@]/.test(safe))safe=`'${safe}`;
+  return `"${safe.replace(/"/g,'""')}"`;
+}
+function downloadWardCsv(){
+  const month=document.getElementById('report-month').value||'unspecified-month';
+  const rows=reportRows();
+  const lines=[['Reporting month','Row type','Ward / municipality','Drain ID','Drain name','Drains','Mean health / 100','High risk drains','Health / 100','Risk / 100','Verified cleanings']];
+  rows.forEach(group=>{
+    lines.push([month,'Ward summary',group.ward,'','',group.drains,group.meanHealth,group.highRisk,'','',group.verifiedCleanings]);
+    group.records.forEach(row=>lines.push([month,'Drain detail',row.ward,row.drainId,row.drainName,'','','',row.health,row.risk,row.verifiedCleanings]));
+  });
+  const csv='\uFEFF'+lines.map(line=>line.map(csvCell).join(',')).join('\r\n');
+  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  const link=document.createElement('a');link.href=url;link.download=`drainops-ward-report-${month}.csv`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));}
+function printWardReport(){
+  const month=document.getElementById('report-month').value||'Unspecified month';
+  const groups=reportRows();
+  const summary=groups.map(group=>`<tr><td>${escapeHtml(group.ward)}</td><td>${group.drains}</td><td>${group.meanHealth}</td><td>${group.highRisk}</td><td>${group.verifiedCleanings}</td></tr>`).join('');
+  const drains=groups.flatMap(group=>group.records).map(row=>`<tr><td>${escapeHtml(row.ward)}</td><td>${escapeHtml(row.drainId)}</td><td>${escapeHtml(row.drainName)}</td><td>${row.health}</td><td>${row.risk}</td></tr>`).join('');
+  const frame=document.createElement('iframe');
+  frame.title='Printable DrainOps ward report';
+  frame.style.cssText='position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0';
+  frame.onload=()=>{frame.contentWindow.focus();frame.contentWindow.print();};
+  document.body.append(frame);
+  frame.contentWindow.addEventListener('afterprint',()=>frame.remove(),{once:true});
+  frame.srcdoc=`<!doctype html><html><head><meta charset="utf-8"><title>DrainOps ward report ${escapeHtml(month)}</title><style>body{font:14px Arial,sans-serif;margin:32px;color:#17202a}h1{font-size:22px}p{color:#536170}.notice{padding:12px;background:#fff4d4;border:1px solid #d3a84f}table{border-collapse:collapse;width:100%;margin:18px 0}th,td{text-align:left;padding:8px;border:1px solid #cbd2d9}th{background:#eef2f5}@media print{button{display:none}}</style></head><body><h1>DrainOps · Ward-wise monthly report</h1><p>Reporting period: ${escapeHtml(month)} · Snapshot generated: ${escapeHtml(new Date().toLocaleString())}</p><p class="notice">Prototype report: drain-health values are the current registry snapshot. Verified cleaning counts are zero because no verified completion records are connected. This is not historical monthly performance data.</p><h2>Ward summary</h2><table><thead><tr><th>Ward / municipality</th><th>Drains</th><th>Mean health</th><th>High risk</th><th>Verified cleanings</th></tr></thead><tbody>${summary}</tbody></table><h2>Drain detail</h2><table><thead><tr><th>Ward / municipality</th><th>Drain ID</th><th>Drain</th><th>Health</th><th>Risk</th></tr></thead><tbody>${drains}</tbody></table></body></html>`;
+  setTimeout(()=>frame.remove(),60000);
+}
+function applyRoleView(){
+  const role=document.getElementById('active-role').value;
+  document.querySelectorAll('[data-visible-roles]').forEach(element=>{
+    const allowed=element.dataset.visibleRoles.split(',').includes(role);
+    element.classList.toggle('role-hidden',!allowed);
+  });
+  document.getElementById('role-status').textContent=`${role[0].toUpperCase()+role.slice(1)} view`;
+  document.getElementById('role-description').textContent=roleCapabilities[role];
+}
+async function saveInspectionCorrection(){
+  const result=currentInspection;
+  const status=document.getElementById('correction-status');
+  if(!result?.file){status.textContent='The inspection photo is no longer available. Upload the photo again to save a training correction.';return;}
+  const score=Number(document.getElementById('corrected-health').value);
+  const debris={
+    plastic:Number(document.getElementById('corrected-plastic').value),
+    silt:Number(document.getElementById('corrected-silt').value),
+    organic:Number(document.getElementById('corrected-organic').value)
+  };
+  if(!Number.isInteger(score)||score<0||score>100){status.textContent='Enter a corrected health score from 0 to 100.';return;}
+  if(Object.values(debris).some(value=>!Number.isFinite(value)||value<0||value>100)||Object.values(debris).reduce((sum,value)=>sum+value,0)!==100){status.textContent='Enter debris percentages from 0 to 100; they must total exactly 100%.';return;}
+  status.textContent='Saving correction and preparing a local training example…';
+  try{
+    const photo=await makeTrainingImage(result.file);
+    const item={
+      id:`COR-${crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,8)}`,
+      type:'training-feedback',
+      status:'queued',
+      note:`Score ${result.health}→${score}; corrected debris labels`,
+      feedback:{
+        correctedHealth:score,
+        correctedDebris:debris,
+        predictedHealth:result.health,
+        predictedDebris:result.debris,
+        confidence:result.confidence,
+        modelMode:result.mode,
+        photo,
+        createdAt:new Date().toISOString(),
+        actor:document.getElementById('actor-name').value.trim()||'Unknown user',
+        role:document.getElementById('active-role').value
+      }
+    };
+    const items=await readQueue();
+    items.unshift(item);
+    await writeQueue(items);
+    const audited=recordAudit({
+      action:'Inspector score/debris correction',
+      actor:item.feedback.actor,
+      role:item.feedback.role,
+      target:document.getElementById('drain-id')?.value||'Photo inspection',
+      change:`Health ${result.health}→${score}; plastic ${result.debris.plastic}%→${debris.plastic}%, silt ${result.debris.silt}%→${debris.silt}%, organic ${result.debris.organic}%→${debris.organic}%`,
+      timestamp:item.feedback.createdAt
+    });
+    status.textContent=audited
+      ?'Correction saved offline with a local audit entry as pending training feedback. It will not change the model until a backend training/sync endpoint is connected.'
+      :'Correction is queued, but audit persistence failed. Do not treat this as an audited change.';
+  }catch(error){
+    console.error('Could not save the training correction',error);
+    status.textContent=`Could not save this correction: ${error.message}`;
+  }
+}
+const publicWardScorecard=[
+  { ward:'Ward 5', health:74, frequency:'2 / month', risk:'Moderate' },
+  { ward:'Ward 7', health:61, frequency:'1 / month', risk:'High' },
+  { ward:'Ward 9', health:79, frequency:'3 / month', risk:'Low' },
+  { ward:'Ward 12', health:53, frequency:'1 / month', risk:'High' }
+];
+const publicAlerts=[
+  { title:'Ward 7 + heavy rain alert', detail:'2,430 residents to receive WhatsApp warning 18 hours before waterlogging.', tag:'SMS' },
+  { title:'Barrackpore market outfall', detail:'Resident report auto-scored at 91/100 and added to the dispatch queue.', tag:'Citizen' },
+  { title:'Councillor dashboard refreshed', detail:'Drain health and last-cleaned dates updated for the public portal.', tag:'Public' }
+];
+function renderPublicCards(){
+  const scoreList=document.getElementById('ward-score-list');
+  if(scoreList){ scoreList.innerHTML = publicWardScorecard.map(item => `
+    <li>
+      <div>
+        <strong>${item.ward}</strong><br><small>${item.frequency} cleaning</small>
+      </div>
+      <div class="ward-score-metric">
+        <b>${item.health}</b>
+        <span>${item.risk}</span>
+      </div>
+    </li>
+  `).join(''); }
+  const alertList=document.getElementById('alert-list');
+  if(alertList){ alertList.innerHTML = publicAlerts.map(item => `
+    <li>
+      <div class="alert-card">
+        <span class="alert-tag">${item.tag}</span>
+        <strong>${item.title}</strong>
+        <small>${item.detail}</small>
+      </div>
+    </li>
+  `).join(''); }
+}
+async function submitCitizenReport(){
+  const name = document.getElementById('citizen-name').value || 'Resident';
+  const location = document.getElementById('citizen-location').value || 'Unspecified location';
+  const issue = document.getElementById('citizen-issue').value || 'Blocked inlet';
+  const ward = document.getElementById('citizen-ward').value || 'Ward 5';
+  const urgencyBoost = { High: 18, Medium: 10, Low: 4 }[document.getElementById('citizen-urgency').value] || 10;
+  const base = 52 + Math.floor(Math.random() * 32);
+  const score = Math.min(99, base + urgencyBoost);
+  const status = document.getElementById('citizen-report-status');
+  if(status){ status.textContent = `${name} reported ${issue.toLowerCase()} near ${location} in ${ward}. Auto-score: ${score}/100.`; }
+  const scoreEl = document.getElementById('citizen-auto-score');
+  if(scoreEl){ scoreEl.textContent = `${score} / 100`; }
+  const photoStatus = document.getElementById('citizen-photo-status');
+  if(photoStatus){ photoStatus.textContent = 'Photo attached and queued for review'; }
+  const queueItem={id:`CIT-${Date.now().toString().slice(-6)}`, status:'queued', note:`${issue} · ${location}`};
+  const items=await readQueue(); items.unshift(queueItem); await writeQueue(items);
+}
+function checkPhotoQuality(file){return new Promise((resolve)=>{if(!file){resolve({ok:true, text:'✔ Clear image, drain visible'}); return;} const img=new Image(); const url=URL.createObjectURL(file); img.onload=()=>{const canvas=document.createElement('canvas'); const ctx=canvas.getContext('2d'); canvas.width=80; canvas.height=80; ctx.drawImage(img,0,0,80,80); const data=ctx.getImageData(0,0,80,80).data; let brightness=0, contrast=0; for(let i=0;i<data.length;i+=4){ brightness += (data[i]+data[i+1]+data[i+2])/3; } brightness/= (80*80); for(let i=0;i<data.length;i+=4){ const avg=(data[i]+data[i+1]+data[i+2])/3; contrast += Math.abs(avg-brightness); } contrast/= (80*80); const isDark = brightness < 70; const isBlur = contrast < 18; const ok = !isDark && !isBlur; resolve({ok, text: ok ? '✔ Clear image, drain visible' : isDark ? '⚠ Image is too dark; retake in daylight.' : '⚠ Image is blurry or not centered on the drain.'}); URL.revokeObjectURL(url);}; img.src=url;});}
+function bindPhotoInput(type){const input=document.querySelector(`input[data-photo="${type}"]`); const label=document.querySelector(`label[data-photo-box="${type}"]`); input.addEventListener('change', async (event)=>{const file=event.target.files?.[0]; if(!file) return; const result=await checkPhotoQuality(file); const img=document.getElementById(type==='before'?'preview-before':'preview-after'); const box=document.querySelector(`label[data-photo-box="${type}"]`); const quality=document.getElementById('photo-quality'); const reader=new FileReader(); reader.onload=(e)=>{img.src=e.target.result; img.hidden=false; box.querySelector('span').hidden=true;}; reader.readAsDataURL(file); if(result.ok){ quality.classList.add('quality-good'); quality.classList.remove('quality-bad'); quality.textContent='✔ Clear image, drain visible'; } else { quality.classList.remove('quality-good'); quality.classList.add('quality-bad'); quality.textContent=result.text; } }); }
+['before','after'].forEach(bindPhotoInput);
+document.getElementById('queue-inspection').addEventListener('click', queueInspection);
+document.getElementById('sync-now').addEventListener('click', syncQueue);
+document.getElementById('submit-citizen-report').addEventListener('click', submitCitizenReport);
+document.getElementById('citizen-photo').addEventListener('change', async (event)=>{const file=event.target.files?.[0]; const status=document.getElementById('citizen-photo-status'); if(!file){ status.textContent='No photo attached yet'; return; } const quality=await checkPhotoQuality(file); status.textContent = `${file.name} · ${quality.text}`;});
+document.getElementById('scan-qr').addEventListener('click', ()=>{const value=prompt('Scan QR code or enter drain tag ID'); if(value){document.getElementById('drain-id').value=value.trim();}});
+const voiceBtn=document.getElementById('voice-record'); const voicePreview=document.getElementById('voice-preview'); let mediaRecorder; let voiceChunks=[];
+voiceBtn.addEventListener('click', async () => {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { alert('Voice capture is not supported in this browser.'); return; }
+  if (mediaRecorder && mediaRecorder.state === 'recording') { mediaRecorder.stop(); voiceBtn.textContent='Record note'; return; }
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  mediaRecorder = new MediaRecorder(stream);
+  voiceChunks = [];
+  mediaRecorder.ondataavailable = (event) => { if (event.data.size > 0) voiceChunks.push(event.data); };
+  mediaRecorder.onstop = () => { const blob = new Blob(voiceChunks, { type: 'audio/webm' }); const url = URL.createObjectURL(blob); voicePreview.src = url; voicePreview.hidden = false; voiceBtn.textContent='Record note'; stream.getTracks().forEach(t=>t.stop()); };
+  mediaRecorder.start(); voiceBtn.textContent='Stop recording';
+});
+const scoreEl=document.getElementById('score-improvement'); if(scoreEl){ scoreEl.textContent='+26'; } 
+const heroVideo=document.querySelector('.hero-video');
+if(heroVideo){
+  const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
+  const syncHeroVideo=()=>{
+    if(reducedMotion.matches){heroVideo.pause();heroVideo.removeAttribute('autoplay');}
+    else{heroVideo.setAttribute('autoplay','');heroVideo.play().catch(error=>console.warn('Homepage background video could not autoplay',error));}
+  };
+  syncHeroVideo();
+  reducedMotion.addEventListener('change',syncHeroVideo);
+}
+document.querySelectorAll('.video-card .play-button').forEach(button=>button.addEventListener('click',()=>{
+  const card=button.closest('.video-card');
+  const frame=document.createElement('iframe');
+  frame.src=`https://www.youtube-nocookie.com/embed/${card.dataset.videoId}?autoplay=1&rel=0`;
+  frame.title=button.getAttribute('aria-label').replace(/^Play /,'');
+  frame.loading='eager';
+  frame.referrerPolicy='strict-origin-when-cross-origin';
+  frame.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+  frame.allowFullscreen=true;
+  card.replaceChildren(frame);
+}));
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in')}),{threshold:.12});document.querySelectorAll('.rv').forEach(e=>io.observe(e));
+document.querySelectorAll('[data-to]').forEach(el=>{const to=+el.dataset.to;let t0;const s=ts=>{t0=t0||ts;const p=Math.min((ts-t0)/1600,1);el.textContent=Math.round(to*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(s)};requestAnimationFrame(s)});
+renderQueue(); renderPublicCards(); setLanguage('en');
+document.querySelectorAll('.ctl select,.twin-filter select,#wb').forEach(el=>el.addEventListener('change',()=>{const m=document.getElementById('map')._drainopsMap;if(m)m._userMoved=false},true));
+document.getElementById('report-month').value=new Date().toISOString().slice(0,7);
+function populateReportWards(){
+  const select=document.getElementById('report-ward');
+  const selected=select.value||'All';
+  const wards=[...new Set(registryRows().map(row=>row[2]).filter(Boolean))].sort();
+  select.replaceChildren();
+  const all=document.createElement('option');all.value='All';all.textContent='All wards';select.append(all);
+  wards.forEach(ward=>{const option=document.createElement('option');option.value=ward;option.textContent=ward;select.append(option);});
+  if(wards.includes(selected)||selected==='All')select.value=selected;
+}
+populateReportWards();renderContractorReport();renderWardReport();renderAuditLog();applyRoleView();
+document.getElementById('active-role').addEventListener('change',applyRoleView);
+document.getElementById('report-ward').addEventListener('change',renderWardReport);
+document.getElementById('report-month').addEventListener('change',renderWardReport);
+document.getElementById('export-excel').addEventListener('click',downloadWardCsv);
+document.getElementById('export-pdf').addEventListener('click',printWardReport);
+$('#res').addEventListener('click',event=>{if(event.target.closest('#save-correction'))saveInspectionCorrection();if(event.target.closest('#retake-photo'))$('#file').click();});
+$('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const u=URL.createObjectURL(f),im=new Image();im.onload=async()=>{
+const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');g.drawImage(im,0,0,64,64);const a=g.getImageData(0,0,64,64).data,L=[];
+for(let i=0;i<a.length;i+=4)L.push((a[i]+a[i+1]+a[i+2])/765);let s=0,t=0;L.forEach((v,i)=>{s+=v;if(i%64)t+=Math.abs(v-L[i-1])});const b=s/L.length,tx=t/L.length;
+let h=Math.round(Math.max(0,Math.min(100,100-60*(1-b)-400*tx))),k=h>=66?'Clear':h>=33?'Moderate':'Critical',cl=h>=66?'ok':h>=33?'warn':'crit';
+let dv=[['Plastic',Math.min(1,tx*5)],['Silt',1-b],['Organic',.3]],tot=dv.reduce((a,d)=>a+d[1],0)||1;
+let mode='Demo heuristic · not a trained model',confidence=null,confidenceLabel='Model confidence';
+try{const fd=new FormData();fd.append('photo',f);const r=await fetch(API+'/inspect',{method:'POST',body:fd});
+if(r.ok){const j=await r.json();h=Math.round(j.health);k=j.tier;cl=h>=66?'ok':h>=33?'warn':'crit';
+dv=[['Plastic',j.debris.plastic],['Silt',j.debris.silt],['Organic',j.debris.organic]];tot=dv.reduce((a,d)=>a+d[1],0)||1;
+mode=j.model_mode==='onnx'?'Trained model':j.model_mode==='groq_vision'?'Groq vision estimate · review before use':'Server demo heuristic · not a trained model';
+if(j.model_mode==='groq_vision')confidenceLabel='AI-reported confidence · not calibrated';
+if(j.confidence!==null&&j.confidence!==undefined&&Number.isFinite(Number(j.confidence)))confidence=Math.max(0,Math.min(1,Number(j.confidence)>1?Number(j.confidence)/100:Number(j.confidence)));
+}else{mode=`Browser demo fallback · API returned ${r.status}`;console.warn(`Inspection API returned ${r.status}; showing local demo estimate`);}}catch(error){mode='Browser demo fallback · API unavailable';console.warn('Inspection API unavailable; showing local demo estimate',error);}
+const quality=await checkPhotoQuality(f);
+const weightTotal=dv.reduce((sum,item)=>sum+Math.max(0,Number(item[1])||0),0)||1;
+const correctedPlastic=Math.round(Math.max(0,Number(dv[0][1])||0)/weightTotal*100);
+const correctedSilt=Math.round(Math.max(0,Number(dv[1][1])||0)/weightTotal*100);
+const correctedOrganic=100-correctedPlastic-correctedSilt;
+const lowConfidence=confidence!==null&&confidence<0.6;
+const guidance=lowConfidence||!quality.ok?'Retake the photo in better light and frame the drain. If the result remains uncertain, request supervisor review.':confidence===null?'Confidence is not provided for this demo estimate; request supervisor review before using it as a verified label.':'Confidence is above the review threshold. Check the result before dispatch.';
+currentInspection={file:f,health:h,debris:{plastic:correctedPlastic,silt:correctedSilt,organic:correctedOrganic},confidence,mode};
+$('#pv').innerHTML=`<img src="${u}" alt="Uploaded drain">`;
+$('#res').innerHTML=`<span class="chip">${mode}</span><div class="big" style="color:${COL[cl]};margin-top:10px">${h}<small>/100 health · ${k}</small></div>`+
+`<div class="confidence-card ${lowConfidence||!quality.ok?'low':''}"><strong>${confidence===null?'Confidence unavailable':`${confidenceLabel} · ${Math.round(confidence*100)}%`}</strong><span>${guidance}</span>${lowConfidence||!quality.ok?`<p>${!quality.ok?quality.text:''} <button class="sync-btn secondary" id="retake-photo" type="button">Retake photo</button></p>`:''}</div>`+
+dv.map(([n,v],i)=>{const pct=[correctedPlastic,correctedSilt,correctedOrganic][i];return `<div class="fb"><span>${n}</span><i><b style="width:${pct}%"></b></i><em>${pct}%</em></div>`}).join('')+
+`<p style="color:var(--mut);font-size:.85rem">Equipment cue: ${correctedPlastic>=40?'prioritize litter screens and grabbers':correctedSilt>=40?'prioritize desilting tools and vacuum equipment':correctedOrganic>=40?'use rakes and organic-waste handling equipment':'prepare mixed-debris tools'}.</p>
+<form class="correction-form" onsubmit="return false"><h3>Correct this result</h3><p>Inspector corrections are stored locally with a resized photo as pending training feedback. They do not train the model until a backend review/training endpoint is connected.</p>
+<div class="correction-fields"><label class="full">Corrected health score (0–100)<input id="corrected-health" type="number" min="0" max="100" step="1" value="${h}" required></label>
+<label>Plastic %<input id="corrected-plastic" type="number" min="0" max="100" step="1" value="${correctedPlastic}" required></label>
+<label>Silt %<input id="corrected-silt" type="number" min="0" max="100" step="1" value="${correctedSilt}" required></label>
+<label>Organic %<input id="corrected-organic" type="number" min="0" max="100" step="1" value="${correctedOrganic}" required></label></div>
+<button class="primary-btn" id="save-correction" type="button" style="margin-top:12px">Save correction to training queue</button><div id="correction-status" class="correction-status" aria-live="polite"></div></form>`};im.src=u};
+addEventListener('resize',()=>{if(typeof size==='function')size();rs()});if(typeof size==='function')size();rs();update();if(typeof draw==='function')requestAnimationFrame(draw);rr();
+(async()=>{try{const r=await fetch(API+'/drains');if(!r.ok)throw 0;const g=await r.json();if(!g.features.length)return;
+D=g.features.map(f=>{const p=f.properties,c=f.geometry.type==='Point'?f.geometry.coordinates:f.geometry.coordinates[0];
+return[p.code,p.name||p.code,p.municipality||'',p.state||'',c[1],c[0],p.health,p.width_m||1,p.depth_m||1,p.condition||'']});
+sel=null;ov={};populateReportWards();renderWardReport();update()}catch(e){console.warn('API unreachable - showing embedded registry data')}})();
+</script></body></html>
 
